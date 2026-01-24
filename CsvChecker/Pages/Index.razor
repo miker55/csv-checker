@@ -1,9 +1,206 @@
 ﻿@page "/"
+@using CsvChecker.Models
+@inject CsvChecker.Services.CsvAnalyzer Analyzer
+@inject CsvChecker.Services.ReportStore Store
+@inject CsvChecker.Services.TelemetryService Telemetry
+@inject NavigationManager Nav
 
-<PageTitle>Index</PageTitle>
+<!-- HERO -->
+<div class="py-20 sm:py-32 flex flex-col items-center text-center px-4">
+    <div class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-100 mb-6">
+        Secure &amp; Private
+    </div>
 
-<h1>Hello, world!</h1>
+    <h1 class="text-4xl sm:text-6xl font-extrabold text-slate-900 tracking-tight max-w-3xl leading-tight">
+        Professional CSV diagnostics <br />
+        <span class="text-teal-600">for developers &amp; analysts.</span>
+    </h1>
 
-Welcome to your new app.
+    <p class="mt-6 text-lg sm:text-xl text-slate-600 max-w-2xl leading-relaxed">
+        Upload your CSV files to identify structural errors, encoding mismatches, and data integrity issues.
+        Instant reports, no data retention.
+    </p>
 
-<SurveyPrompt Title="How is Blazor working for you?" />
+    <div class="mt-10 flex flex-col items-center gap-4">
+        <!-- Real file input is hidden; label is the pretty button -->
+        <InputFile id="csvUpload"
+                   class="hidden"
+                   accept=".csv,text/csv"
+                   OnChange="OnFileSelected"
+                   disabled="@_busy" />
+
+        <label for="csvUpload"
+               class="@UploadButtonClass"
+               aria-disabled="@_busy">
+            @if (_busy)
+            {
+                <svg class="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                    </path>
+                </svg>
+                <span>Analyzing...</span>
+            }
+            else
+            {
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <span>Upload CSV</span>
+            }
+        </label>
+
+        <div class="flex items-center gap-4 text-sm text-slate-400 font-medium">
+            <span>No accounts</span>
+            <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+            <span>No AI storage</span>
+            <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+            <span>No file retention</span>
+        </div>
+
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(_error))
+{
+    <div class="max-w-md mx-auto mb-12 p-4 rounded-xl bg-red-50 border border-red-100 text-red-700 text-center text-sm font-medium animate-bounce">
+        @_error
+    </div>
+}
+
+<!-- FEATURES -->
+<section class="py-24 bg-white border-y border-slate-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+
+            <div class="p-8 rounded-2xl bg-slate-50 border border-slate-200/60 hover:border-teal-200 transition-colors group">
+                <div class="w-12 h-12 rounded-xl bg-teal-100 text-teal-600 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-3">Structural Checks</h3>
+                <p class="text-slate-600 leading-relaxed text-sm">
+                    Verifies column counts, empty rows, and malformed quotes across your entire dataset.
+                </p>
+            </div>
+
+            <div class="p-8 rounded-2xl bg-slate-50 border border-slate-200/60 hover:border-teal-200 transition-colors group">
+                <div class="w-12 h-12 rounded-xl bg-teal-100 text-teal-600 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-3">Encoding &amp; Delimiter</h3>
+                <p class="text-slate-600 leading-relaxed text-sm">
+                    Automatically detects encoding (UTF-8, Latin-1) and identifies the active delimiter.
+                </p>
+            </div>
+
+            <div class="p-8 rounded-2xl bg-slate-50 border border-slate-200/60 hover:border-teal-200 transition-colors group">
+                <div class="w-12 h-12 rounded-xl bg-teal-100 text-teal-600 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-3">Error Reporting</h3>
+                <p class="text-slate-600 leading-relaxed text-sm">
+                    Get precise row and column location for every error found, categorized by severity.
+                </p>
+            </div>
+
+            <div class="p-8 rounded-2xl bg-slate-50 border border-slate-200/60 hover:border-teal-200 transition-colors group">
+                <div class="w-12 h-12 rounded-xl bg-teal-100 text-teal-600 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-3">Diagnostic Export</h3>
+                <p class="text-slate-600 leading-relaxed text-sm">
+                    Download a detailed summary of all identified issues for easy troubleshooting.
+                </p>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+@code {
+    private bool _busy;
+    private string? _error;
+
+    // Tailwind-ish CTA button classes from your Hero.tsx
+    private string UploadButtonClass =>
+        "relative group cursor-pointer flex items-center justify-center gap-3 px-8 py-4 rounded-xl " +
+        "bg-teal-600 text-white font-semibold text-lg shadow-lg shadow-teal-600/20 " +
+        "hover:bg-teal-700 transition-all active:scale-95 " +
+        (_busy ? "opacity-50 cursor-not-allowed pointer-events-none" : "");
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        _error = null;
+        _busy = true;
+
+        try
+        {
+            var file = e.File;
+            if (file is null)
+            {
+                _error = "No file selected.";
+                return;
+            }
+
+            if (!file.Name.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
+            {
+                _error = "Please upload a valid CSV file.";
+                return;
+            }
+
+            const long maxBytes = 15 * 1024 * 1024; // 15MB
+            if (file.Size > maxBytes)
+            {
+                _error = "File too large for v1 (max 15MB).";
+                return;
+            }
+
+            byte[] bytes;
+            await using (var stream = file.OpenReadStream(maxAllowedSize: maxBytes))
+            using (var ms = new MemoryStream())
+            {
+                await stream.CopyToAsync(ms);
+                bytes = ms.ToArray();
+            }
+
+            var result = await Analyzer.AnalyzeAsync(file.Name, bytes, CancellationToken.None);
+            Store.Put(result);
+
+            await Telemetry.TryWriteAsync(new TelemetryEvent
+            {
+                EventType = "analysis_complete",
+                RowCount = result.RowCount,
+                ColumnCount = result.ColumnCount,
+                FileSizeBytes = result.FileSizeBytes,
+                IssueCount = result.Issues.Count,
+                AppVersion = CsvChecker.Services.AppVersion.Get()
+            }, CancellationToken.None);
+
+            Nav.NavigateTo($"/report/{result.Token}");
+        }
+        catch (Exception ex)
+        {
+            _error = "Failed to analyze CSV. Please try again.";
+
+            await Telemetry.TryWriteAsync(new TelemetryEvent
+            {
+                EventType = "analysis_failed",
+                AppVersion = CsvChecker.Services.AppVersion.Get()
+            }, CancellationToken.None);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

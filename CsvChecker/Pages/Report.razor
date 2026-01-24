@@ -1,0 +1,268 @@
+﻿@page "/report/{Token}"
+@using System
+@using CsvChecker.Models
+@inject CsvChecker.Services.ReportStore Store
+@inject NavigationManager Nav
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    @if (_result is null)
+    {
+        <div class="max-w-2xl mx-auto text-center">
+            <div class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                Report unavailable
+            </div>
+
+            <h1 class="mt-6 text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                Report not found
+            </h1>
+
+            <p class="mt-4 text-slate-600 leading-relaxed">
+                This can happen after an app restart because reports are stored in memory.
+            </p>
+
+            <div class="mt-8 flex justify-center gap-3">
+                <a href="/"
+                   class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-teal-600 text-white font-semibold shadow-lg shadow-teal-600/20 hover:bg-teal-700 transition-all active:scale-95">
+                    Upload another CSV
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Header -->
+        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+            <div>
+                <div class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-100">
+                    Analysis complete
+                </div>
+
+                <h1 class="mt-4 text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                    CSV Report
+                </h1>
+
+                <p class="mt-2 text-slate-600">
+                    <span class="font-semibold text-slate-800">@_result.FileName</span>
+                    <span class="text-slate-400">•</span>
+                    <span>@FormatBytes(_result.FileSizeBytes)</span>
+                </p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+                <a href="@($"/download/errors/{_result.Token}")"
+                   class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-all active:scale-95">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download errors.csv
+                </a>
+
+                <a href="/"
+                   class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold hover:border-teal-200 hover:text-teal-700 transition-all active:scale-95">
+                    Analyze another CSV
+                </a>
+            </div>
+        </div>
+
+        <!-- Summary cards -->
+        <div class="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200/60">
+                <div class="text-xs font-semibold text-slate-500">Encoding</div>
+                <div class="mt-1 text-lg font-bold text-slate-900">@(_result.DetectedEncoding ?? "Unknown")</div>
+            </div>
+
+            <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200/60">
+                <div class="text-xs font-semibold text-slate-500">Delimiter</div>
+                <div class="mt-1 text-lg font-bold text-slate-900">@(_result.DetectedDelimiter?.ToString() ?? "Unknown")</div>
+            </div>
+
+            <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200/60">
+                <div class="text-xs font-semibold text-slate-500">Rows</div>
+                <div class="mt-1 text-lg font-bold text-slate-900">@(_result.RowCount?.ToString() ?? "Unknown")</div>
+            </div>
+
+            <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200/60">
+                <div class="text-xs font-semibold text-slate-500">Columns</div>
+                <div class="mt-1 text-lg font-bold text-slate-900">@(_result.ColumnCount?.ToString() ?? "Unknown")</div>
+            </div>
+        </div>
+
+        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="p-5 rounded-2xl bg-white border border-slate-200">
+                <div class="text-xs font-semibold text-slate-500">Newlines</div>
+                <div class="mt-1 text-slate-800 font-semibold">@(_result.DetectedNewline ?? "Unknown")</div>
+            </div>
+
+            <div class="p-5 rounded-2xl bg-white border border-slate-200">
+                <div class="text-xs font-semibold text-slate-500">Issues</div>
+                <div class="mt-1 flex items-center gap-2">
+                    <span class="text-slate-900 font-extrabold text-xl">@_result.Issues.Count</span>
+                    <span class="text-slate-600 text-sm">@(_result.Issues.Count == 1 ? "issue found" : "issues found")</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter pills -->
+        <div class="mt-4 flex flex-wrap gap-2">
+            @foreach (CsvIssueSeverity s in Enum.GetValues(typeof(CsvIssueSeverity)))
+            {
+                <button type="button"
+                        class="px-3 py-1 rounded-full text-xs font-semibold border transition-colors @(s == _filter
+                                                       ? "bg-slate-900 text-white border-slate-900"
+                                                       : "bg-white text-slate-700 border-slate-200 hover:border-teal-300")"
+                        @onclick="@(() => ToggleFilter(s))">
+                    @s
+                </button>
+            }
+
+            @if (_filter is not null)
+            {
+                <button type="button"
+                        class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200"
+                        @onclick="ClearFilter">
+                    Clear
+                </button>
+            }
+        </div>
+
+        <!-- Issues -->
+        <div class="mt-12">
+            <div class="flex items-center justify-between gap-4">
+                <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">
+                    Issues
+                </h2>
+
+                @if (_result.Issues.Count > 0)
+                {
+                    <div class="text-sm text-slate-500">
+                        Sorted by severity
+                    </div>
+                }
+            </div>
+
+            @if (_result.Issues.Count == 0)
+            {
+                <div class="mt-6 p-6 rounded-2xl bg-teal-50 border border-teal-100 text-teal-900">
+                    <div class="font-semibold">No issues found.</div>
+                    <div class="mt-1 text-sm text-teal-800/80">Your CSV looks clean based on the current rules.</div>
+                </div>
+            }
+            else
+            {
+                <div class="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-left">
+                            <thead class="bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                    <th class="px-6 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Severity</th>
+                                    <th class="px-6 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Code</th>
+                                    <th class="px-6 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Message</th>
+                                    <th class="px-6 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Row</th>
+                                    <th class="px-6 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Column</th>
+                                </tr>
+                            </thead>
+
+                            <tbody class="divide-y divide-slate-200">
+                                @foreach (var i in FilteredIssues.OrderByDescending(x => x.Severity))
+                                {
+                                    <tr class="hover:bg-slate-50/70">
+                                        <td class="px-6 py-4 align-top">
+                                            <span class="@SeverityChipClass(i.Severity)">
+                                                @i.Severity
+                                            </span>
+                                        </td>
+
+                                        <td class="px-6 py-4 align-top">
+                                            <span class="font-mono text-xs px-2 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
+                                                @i.Code
+                                            </span>
+                                        </td>
+
+                                        <td class="px-6 py-4 align-top">
+                                            <div class="text-slate-900 font-medium">
+                                                @i.Message
+                                            </div>
+
+                                            @if (!string.IsNullOrWhiteSpace(i.Sample))
+                                            {
+                                                <div class="mt-2">
+                                                    <div class="text-xs font-semibold text-slate-500 mb-1">Sample</div>
+                                                    <code class="block max-w-full overflow-x-auto whitespace-pre rounded-lg bg-slate-100 border border-slate-200 px-3 py-2 text-xs font-mono text-slate-800">
+                                                        @i.Sample
+                                                    </code>
+                                                </div>
+                                            }
+                                        </td>
+
+                                        <td class="px-6 py-4 align-top text-slate-700">
+                                            @(i.RowNumber is not null ? i.RowNumber.ToString() : "—")
+                                        </td>
+
+                                        <td class="px-6 py-4 align-top text-slate-700">
+                                            @(string.IsNullOrWhiteSpace(i.ColumnName) ? "—" : i.ColumnName)
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Token { get; set; } = default!;
+    private CsvAnalysisResult? _result;
+
+    private CsvIssueSeverity? _filter;
+
+    private IEnumerable<CsvIssue> FilteredIssues =>
+        _result is null
+            ? Array.Empty<CsvIssue>()
+            : (_filter is null ? _result.Issues : _result.Issues.Where(i => i.Severity == _filter));
+
+    protected override void OnParametersSet()
+    {
+        if (Store.TryGet(Token, out var r))
+            _result = r;
+        else
+            _result = null;
+
+        // If the current filter no longer exists in the filtered set, leave it as-is;
+        // user can Clear.
+    }
+
+    private void ToggleFilter(CsvIssueSeverity s)
+    {
+        _filter = _filter == s ? null : s;
+    }
+
+    private void ClearFilter() => _filter = null;
+
+    private static string FormatBytes(long bytes)
+    {
+        // Dependency-free formatter
+        var units = new[] { "B", "KB", "MB", "GB" };
+        double size = bytes;
+        int unit = 0;
+
+        while (size >= 1024 && unit < units.Length - 1)
+        {
+            size /= 1024;
+            unit++;
+        }
+
+        return unit == 0 ? $"{bytes} {units[unit]}" : $"{size:0.#} {units[unit]}";
+    }
+
+    private static string SeverityChipClass(CsvIssueSeverity severity) => severity switch
+    {
+        CsvIssueSeverity.Error => "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-100",
+        CsvIssueSeverity.Warning => "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-100",
+        CsvIssueSeverity.Info => "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-50 text-sky-800 border border-sky-100",
+        _ => "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200",
+    };
+}

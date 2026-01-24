@@ -1,19 +1,33 @@
 ﻿@inherits LayoutComponentBase
 
-<PageTitle>CsvChecker</PageTitle>
+<PageTitle>CSV Checker</PageTitle>
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+<div class="min-h-screen flex flex-col selection:bg-teal-100 selection:text-teal-900">
+    <header class="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a class="cursor-pointer" href="/" aria-label="CSV Checker home">
+                    <Logo Size="md" />
+                </a>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
+                <nav class="flex items-center space-x-8" aria-label="Primary">
+                    <NavLink href="/" class="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors" Match="NavLinkMatch.All" ActiveClass="text-teal-700">
+                        Upload
+                    </NavLink>
+                    <NavLink href="/privacy" class="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors" ActiveClass="text-teal-700">
+                        Privacy
+                    </NavLink>
+                    <NavLink href="/contact" class="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors" ActiveClass="text-teal-700">
+                        Contact
+                    </NavLink>
+                </nav>
+            </div>
         </div>
+    </header>
 
-        <article class="content px-4">
-            @Body
-        </article>
+    <main class="flex-grow">
+        @Body
     </main>
+
+    <Footer />
 </div>
