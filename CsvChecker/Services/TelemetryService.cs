@@ -1,10 +1,11 @@
 ﻿using CsvChecker.Data;
 using CsvChecker.Models.Data;
+using CsvChecker.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace CsvChecker.Services;
 
-public sealed class TelemetryService
+public sealed class TelemetryService : ITelemetryService
 {
     private readonly IDbContextFactory<TelemetryDbContext> _dbFactory;
 

@@ -1,10 +1,11 @@
 ﻿@page "/"
 @using CsvChecker.Models
 @using CsvChecker.Models.Data
+@using CsvChecker.Services.Interfaces
 @inject IJSRuntime JS
 @inject CsvChecker.Services.CsvAnalyzer Analyzer
 @inject CsvChecker.Services.ReportStore Store
-@inject CsvChecker.Services.TelemetryService Telemetry
+@inject ITelemetryService Telemetry
 @inject NavigationManager Nav
 @implements IDisposable
 

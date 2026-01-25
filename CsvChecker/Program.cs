@@ -1,5 +1,6 @@
 using CsvChecker.Data;
 using CsvChecker.Services;
+using CsvChecker.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,7 +16,7 @@ builder.Services.AddDbContextFactory<TelemetryDbContext>(opt =>
 // Services
 builder.Services.AddSingleton<ReportStore>();
 builder.Services.AddSingleton<CsvAnalyzer>();
-builder.Services.AddSingleton<TelemetryService>();
+builder.Services.AddSingleton<ITelemetryService, TelemetryService>();
 
 var app = builder.Build();
 
