@@ -1,12 +1,84 @@
-﻿<Router AppAssembly="@typeof(App).Assembly">
-    <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
-        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-    </Found>
-    <NotFound>
-        <PageTitle>CSV Checker</PageTitle>
-        <LayoutView Layout="@typeof(MainLayout)">
-            <p role="alert">Sorry, there's nothing at this address.</p>
-        </LayoutView>
-    </NotFound>
-</Router>
+﻿@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.JSInterop
+
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+@implements IDisposable
+
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        </Found>
+        <NotFound>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <p>Sorry, there's nothing at this address.</p>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>
+
+@code {
+    // True only after the first interactive render (i.e., once prerendering is over)
+    private bool _interactive;
+
+    protected override void OnInitialized()
+    {
+        Nav.LocationChanged += HandleLocationChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _interactive = true;
+
+            // Track initial page view once JS interop is available
+            await TrackPageViewAsync(Nav.Uri);
+        }
+    }
+
+    private async void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        // During prerendering, JS interop isn't available.
+        if (!_interactive)
+            return;
+
+        try
+        {
+            await TrackPageViewAsync(e.Location);
+        }
+        catch (JSDisconnectedException)
+        {
+            // Can happen during shutdown/reconnects; safe to ignore.
+        }
+        catch (InvalidOperationException)
+        {
+            // Defensive: ignore if JS runtime isn't available for some reason.
+        }
+    }
+
+    private ValueTask TrackPageViewAsync(string absoluteUri)
+    {
+        // Convert to a path like "/" or "/report"
+        var relative = Nav.ToBaseRelativePath(absoluteUri);
+        var path = string.IsNullOrEmpty(relative) ? "/" : "/" + relative;
+
+        return JS.InvokeVoidAsync(
+            "gtag",
+            "event",
+            "page_view",
+            new
+            {
+                page_path = path,
+                page_location = absoluteUri
+            }
+        );
+    }
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= HandleLocationChanged;
+    }
+}
