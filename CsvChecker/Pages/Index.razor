@@ -195,6 +195,7 @@
             await Telemetry.TryWriteAsync(new TelemetryEvent
             {
                 EventType = "analysis_failed",
+                Message = ex.Message,
                 AppVersion = CsvChecker.Services.AppVersion.Get()
             }, CancellationToken.None);
         }

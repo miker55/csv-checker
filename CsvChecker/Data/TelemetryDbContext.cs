@@ -17,5 +17,6 @@ public sealed class TelemetryDbContext : DbContext
 
         e.Property(x => x.EventType).HasMaxLength(64).IsRequired();
         e.Property(x => x.AppVersion).HasMaxLength(32);
+        e.Property(x => x.Message).HasMaxLength(512);
     }
 }
