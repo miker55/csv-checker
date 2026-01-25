@@ -129,13 +129,13 @@ public sealed class CsvAnalyzer
                 }
             }
         }
-        catch (Exception ex)
+        catch
         {
             issues.Add(new CsvIssue
             {
                 Code = "CSV_PARSE_FAILED",
                 Severity = CsvIssueSeverity.Error,
-                Message = $"CSV parsing failed: {ex.Message}"
+                Message = $"CSV parsing failed unexpectedly."
             });
         }
 

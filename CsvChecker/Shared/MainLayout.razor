@@ -1,28 +1,88 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 
 <PageTitle>CSV Checker</PageTitle>
 
-<div class="min-h-screen flex flex-col selection:bg-teal-100 selection:text-teal-900">
-    <header class="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-slate-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
+<div class="flex min-h-screen flex-col selection:bg-teal-100 selection:text-teal-900">
+    <header class="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/70 backdrop-blur-md">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="flex h-16 items-center justify-between">
                 <a class="cursor-pointer" href="/" aria-label="CSV Checker home">
                     <Logo Size="md" />
                 </a>
 
-                <nav class="flex items-center space-x-8" aria-label="Primary">
-                    <NavLink href="/" class="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors" Match="NavLinkMatch.All" ActiveClass="text-teal-700">
+                <!-- Desktop nav -->
+                <nav class="hidden items-center space-x-6 md:flex" aria-label="Primary">
+                    <NavLink href="/"
+                             class="text-sm font-medium text-slate-600 transition-colors hover:text-teal-600"
+                             Match="NavLinkMatch.All"
+                             ActiveClass="text-teal-700">
                         Upload
                     </NavLink>
-                    <NavLink href="/privacy" class="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors" ActiveClass="text-teal-700">
+                    <NavLink href="/privacy"
+                             class="text-sm font-medium text-slate-600 transition-colors hover:text-teal-600"
+                             ActiveClass="text-teal-700">
                         Privacy
                     </NavLink>
-                    <NavLink href="/contact" class="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors" ActiveClass="text-teal-700">
+                    <NavLink href="/contact"
+                             class="text-sm font-medium text-slate-600 transition-colors hover:text-teal-600"
+                             ActiveClass="text-teal-700">
                         Contact
                     </NavLink>
                 </nav>
+
+                <!-- Mobile menu button -->
+                <button type="button"
+                        class="inline-flex items-center justify-center rounded-lg p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-400 md:hidden"
+                        aria-label="Open menu"
+                        aria-expanded="@mobileMenuOpen"
+                        @onclick="ToggleMobileMenu">
+                    @if (!mobileMenuOpen)
+                    {
+                        <!-- Hamburger -->
+                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    }
+                    else
+                    {
+                        <!-- X -->
+                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6l-12 12" />
+                        </svg>
+                    }
+                </button>
             </div>
         </div>
+
+        <!-- Mobile menu panel -->
+        @if (mobileMenuOpen)
+        {
+            <div class="border-t border-slate-200 bg-white/90 backdrop-blur-md md:hidden">
+                <div class="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
+                    <nav class="flex flex-col gap-1" aria-label="Mobile Primary">
+                        <NavLink href="/"
+                                 class="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-teal-700"
+                                 Match="NavLinkMatch.All"
+                                 ActiveClass="bg-teal-50 text-teal-800"
+                                 @onclick="CloseMobileMenu">
+                            Upload
+                        </NavLink>
+                        <NavLink href="/privacy"
+                                 class="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-teal-700"
+                                 ActiveClass="bg-teal-50 text-teal-800"
+                                 @onclick="CloseMobileMenu">
+                            Privacy
+                        </NavLink>
+                        <NavLink href="/contact"
+                                 class="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-teal-700"
+                                 ActiveClass="bg-teal-50 text-teal-800"
+                                 @onclick="CloseMobileMenu">
+                            Contact
+                        </NavLink>
+                    </nav>
+                </div>
+            </div>
+        }
     </header>
 
     <main class="flex-grow">
@@ -31,3 +91,11 @@
 
     <Footer />
 </div>
+
+@code {
+    private bool mobileMenuOpen;
+
+    private void ToggleMobileMenu() => mobileMenuOpen = !mobileMenuOpen;
+
+    private void CloseMobileMenu() => mobileMenuOpen = false;
+}

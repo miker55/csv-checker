@@ -1,4 +1,4 @@
-﻿namespace CsvChecker.Models;
+﻿namespace CsvChecker.Models.Data;
 
 public sealed class TelemetryEvent
 {
@@ -7,7 +7,7 @@ public sealed class TelemetryEvent
     public DateTimeOffset CreatedUtc { get; set; } = DateTimeOffset.UtcNow;
 
     // Keep it anonymous + minimal
-    public string EventType { get; set; } = default!;  // e.g. "upload", "analysis_completed"
+    public string EventType { get; set; } = default!;  // see TelemetryEventType
     public string? Message { get; set; }
     public int? RowCount { get; set; }
     public int? ColumnCount { get; set; }

@@ -6,6 +6,5 @@
     <File Path=".gitignore" />
     <File Path="README.md" />
   </Folder>
-  <Project Path="CsvChecker.Library/CsvChecker.Library.csproj" Id="f7a5ade3-4b6a-49e0-a7e0-d010036cea20" />
   <Project Path="CsvChecker/CsvChecker.csproj" />
 </Solution>
