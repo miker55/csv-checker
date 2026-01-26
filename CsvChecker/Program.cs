@@ -1,6 +1,6 @@
 using CsvChecker.Data;
-using CsvChecker.Services;
-using CsvChecker.Services.Interfaces;
+using CvsChecker.Library.Services;
+using CvsChecker.Library.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,9 +14,9 @@ builder.Services.AddDbContextFactory<TelemetryDbContext>(opt =>
     opt.UseSqlite($"Data Source={telemetryDbPath}"));
 
 // Services
-builder.Services.AddSingleton<ReportStore>();
-builder.Services.AddSingleton<CsvAnalyzer>();
+builder.Services.AddSingleton<IReportStore, ReportStore>();
 builder.Services.AddSingleton<ITelemetryService, TelemetryService>();
+builder.Services.AddSingleton<ICsvAnalyzer, CsvAnalyzer>();
 
 var app = builder.Build();
 
@@ -39,7 +39,7 @@ app.UseStaticFiles();
 app.UseRouting();
 
 // Download errors.csv
-app.MapGet("/download/errors/{token}", (string token, ReportStore store) =>
+app.MapGet("/download/errors/{token}", (string token, IReportStore store) =>
 {
     if (!store.TryGet(token, out var result) || result is null)
         return Results.NotFound();
@@ -53,3 +53,4 @@ app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
 await app.RunAsync();
+

@@ -1,4 +1,4 @@
-﻿namespace CsvChecker.Services;
+namespace CvsChecker.Library.Services;
 
 public static class PathProvider
 {

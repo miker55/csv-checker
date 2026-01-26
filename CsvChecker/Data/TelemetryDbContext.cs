@@ -1,4 +1,4 @@
-﻿using CsvChecker.Models.Data;
+﻿using CsvChecker.Data.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace CsvChecker.Data;

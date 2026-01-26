@@ -1,7 +1,8 @@
 ﻿@page "/report/{Token}"
 @using System
-@using CsvChecker.Models
-@inject CsvChecker.Services.ReportStore Store
+@using CsvChecker.Library.Models
+@using CvsChecker.Library.Services.Interfaces
+@inject IReportStore Store
 @inject NavigationManager Nav
 
 <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">

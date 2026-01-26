@@ -1,7 +1,7 @@
-﻿using System.Text;
-using CsvChecker.Models;
+using CsvChecker.Library.Models;
+using System.Text;
 
-namespace CsvChecker.Services;
+namespace CvsChecker.Library.Services;
 
 public static class ErrorsCsvWriter
 {

@@ -1,8 +1,9 @@
-﻿using CsvChecker.Models;
+using CsvChecker.Library.Models;
+using CvsChecker.Library.Services.Interfaces;
 
-namespace CsvChecker.Services;
+namespace CvsChecker.Library.Services;
 
-public sealed class ReportStore
+public sealed class ReportStore : IReportStore
 {
 	// Reports expire 1 hour after being stored
 	private static readonly TimeSpan ReportTtl = TimeSpan.FromHours(1);

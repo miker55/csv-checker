@@ -7,4 +7,5 @@
     <File Path="README.md" />
   </Folder>
   <Project Path="CsvChecker/CsvChecker.csproj" />
+  <Project Path="CvsChecker.Library/CvsChecker.Library.csproj" Id="86dc5cf4-ba1d-4e21-861d-19b14982a3cf" />
 </Solution>

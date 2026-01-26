@@ -1,10 +1,10 @@
 ﻿@page "/"
-@using CsvChecker.Models
-@using CsvChecker.Models.Data
-@using CsvChecker.Services.Interfaces
+@using CsvChecker.Data.Models
+@using CsvChecker.Library.Models
+@using CvsChecker.Library.Services.Interfaces
 @inject IJSRuntime JS
-@inject CsvChecker.Services.CsvAnalyzer Analyzer
-@inject CsvChecker.Services.ReportStore Store
+@inject ICsvAnalyzer Analyzer
+@inject IReportStore Store
 @inject ITelemetryService Telemetry
 @inject NavigationManager Nav
 @implements IDisposable
@@ -166,23 +166,21 @@
             if (file is null)
             {
                 _error = "No file selected.";
-                await Telemetry.TryWriteAsync(new TelemetryEvent
-                {
-                    EventType = TelemetryEventType.NoFileSelected,
-                    AppVersion = CsvChecker.Services.AppVersion.Get()
-                }, ct);
+                await Telemetry.TryTrackAsync(
+                    eventType: TelemetryEventType.NoFileSelected
+                    , ct: ct
+                );
                 return;
             }
 
             if (!file.Name.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
             {
                 _error = "Please upload a valid CSV file.";
-                await Telemetry.TryWriteAsync(new TelemetryEvent
-                {
-                    EventType = TelemetryEventType.WrongFileType,
-                    Message = $"The file type attempted was {Path.GetExtension(file.Name)}.",
-                    AppVersion = CsvChecker.Services.AppVersion.Get()
-                }, ct);
+                await Telemetry.TryTrackAsync(
+                    eventType: TelemetryEventType.WrongFileType
+                    , message: $"The file type attempted was {Path.GetExtension(file.Name)}."
+                    , ct: ct
+                );
                 return;
             }
 
@@ -190,12 +188,11 @@
             if (file.Size > maxBytes)
             {
                 _error = "File too large for v1 (max 15MB).";
-                await Telemetry.TryWriteAsync(new TelemetryEvent
-                {
-                    EventType = TelemetryEventType.FileTooLarge,
-                    Message = $"The file size attempted was {file.Size / 1024.0 / 1024.0:F2}MB.",
-                    AppVersion = CsvChecker.Services.AppVersion.Get()
-                }, ct);
+                await Telemetry.TryTrackAsync(
+                    eventType: TelemetryEventType.FileTooLarge
+                    , message: $"The file size attempted was {file.Size / 1024.0 / 1024.0:F2}MB."
+                    , ct: ct
+                );
                 return;
             }
 
@@ -214,12 +211,11 @@
             catch (Exception ex)
             {
                 // Silently ignore GA failures (ad blockers, script not loaded, etc.)
-                await Telemetry.TryWriteAsync(new TelemetryEvent
-                {
-                    EventType = TelemetryEventType.GAFailure,
-                    Message = ex.Message,
-                    AppVersion = CsvChecker.Services.AppVersion.Get()
-                }, ct);
+                await Telemetry.TryTrackAsync(
+                    eventType: TelemetryEventType.GAFailure
+                    , message: ex.Message
+                    , ct: ct
+                );
             }
 
             byte[] bytes;
@@ -233,15 +229,14 @@
             result = await Analyzer.AnalyzeAsync(file.Name, bytes, ct);
             Store.Put(result);
 
-            await Telemetry.TryWriteAsync(new TelemetryEvent
-            {
-                EventType = TelemetryEventType.AnalysisCompleted,
-                RowCount = result.RowCount,
-                ColumnCount = result.ColumnCount,
-                FileSizeBytes = result.FileSizeBytes,
-                IssueCount = result.Issues.Count,
-                AppVersion = CsvChecker.Services.AppVersion.Get()
-            }, ct);
+            await Telemetry.TryTrackAsync(
+                eventType: TelemetryEventType.AnalysisCompleted
+                , rowCount: result.RowCount
+                , columnCount: result.ColumnCount
+                , fileSizeBytes: result.FileSizeBytes
+                , issueCount: result.Issues.Count
+                , ct: ct
+            );
 
             try
             {
@@ -267,16 +262,15 @@
         {
             _error = "Failed to analyze CSV. Please try again.";
 
-            await Telemetry.TryWriteAsync(new TelemetryEvent
-            {
-                EventType = TelemetryEventType.AnalysisFailed,
-                Message = ex.Message,
-                RowCount = result?.RowCount,
-                ColumnCount = result?.ColumnCount,
-                FileSizeBytes = result?.FileSizeBytes,
-                IssueCount = result?.Issues.Count,
-                AppVersion = CsvChecker.Services.AppVersion.Get()
-            }, ct);
+            await Telemetry.TryTrackAsync(
+                eventType: TelemetryEventType.AnalysisFailed
+                , message: ex.Message
+                , rowCount: result?.RowCount
+                , columnCount: result?.ColumnCount
+                , fileSizeBytes: result?.FileSizeBytes
+                , issueCount: result?.Issues.Count
+                , ct: ct
+            );
         }
         finally
         {

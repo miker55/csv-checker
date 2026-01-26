@@ -1,4 +1,4 @@
-﻿namespace CsvChecker.Models
+﻿namespace CsvChecker.Library.Models
 {
     public static class TelemetryEventType
     {

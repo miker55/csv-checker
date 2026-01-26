@@ -1,4 +1,4 @@
-﻿namespace CsvChecker.Models.Data;
+﻿namespace CsvChecker.Data.Models;
 
 public sealed class TelemetryEvent
 {

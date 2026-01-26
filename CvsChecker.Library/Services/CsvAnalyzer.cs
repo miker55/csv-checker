@@ -1,14 +1,13 @@
-﻿using CsvChecker.Models;
-using CsvChecker.Models.Data;
-using CsvChecker.Services.Interfaces;
 using CsvHelper;
 using CsvHelper.Configuration;
 using System.Globalization;
 using System.Text;
+using CsvChecker.Library.Models;
+using CvsChecker.Library.Services.Interfaces;
 
-namespace CsvChecker.Services;
+namespace CvsChecker.Library.Services;
 
-public sealed class CsvAnalyzer
+public sealed class CsvAnalyzer : ICsvAnalyzer
 {
 	private readonly ITelemetryService _telemetry;
 
@@ -18,9 +17,9 @@ public sealed class CsvAnalyzer
 	}
 
 	public async Task<CsvAnalysisResult> AnalyzeAsync(
-		string fileName,
-		byte[] bytes,
-		CancellationToken ct)
+		string fileName
+		, byte[] bytes
+		, CancellationToken ct)
 	{
 		// Encoding detection (simple v1): UTF-8 with BOM vs without, fallback to UTF-8
 		var encoding = DetectEncoding(bytes, out var hadBom);
@@ -100,7 +99,7 @@ public sealed class CsvAnalyzer
 		}
 
 		// Parse CSV using CsvHelper
-		// We’ll count row/column consistency and detect ragged rows.
+		// We'll count row/column consistency and detect ragged rows.
 		int? columnCount = null;
 		int rowCount = 0;
 
@@ -108,7 +107,7 @@ public sealed class CsvAnalyzer
 		{
 			HasHeaderRecord = true,
 			Delimiter = delimiter.ToString(),
-			BadDataFound = null, // we’ll handle issues ourselves later
+			BadDataFound = null, // we'll handle issues ourselves later
 			MissingFieldFound = null,
 			DetectDelimiter = false
 		};
@@ -197,16 +196,15 @@ public sealed class CsvAnalyzer
 		}
 		catch (Exception ex)
 		{
-			await _telemetry.TryWriteAsync(new TelemetryEvent
-			{
-				EventType = TelemetryEventType.AnalysisFailed,
-				Message = ex.Message,
-				RowCount = null,
-				ColumnCount = null,
-				FileSizeBytes = bytes.LongLength,
-				IssueCount = issues.Count,
-				AppVersion = AppVersion.Get()
-			}, ct);
+			await _telemetry.TryTrackAsync(
+				eventType: TelemetryEventType.AnalysisFailed
+				, rowCount: null
+				, columnCount: null
+				, fileSizeBytes: bytes.LongLength
+				, issueCount: issues.Count
+				, message: ex.Message
+				, ct: ct
+			);
 
 			issues.Add(new CsvIssue
 			{
@@ -359,7 +357,7 @@ public sealed class CsvAnalyzer
 
 	private string SampleRow(string[] fields)
 	{
-		var joined = string.Join(" | ", fields.Select(f => f.Length > 30 ? f[..30] + "…" : f));
-		return joined.Length > 200 ? joined[..200] + "…" : joined;
+		var joined = string.Join(" | ", fields.Select(f => f.Length > 30 ? f[..30] + "�" : f));
+		return joined.Length > 200 ? joined[..200] + "�" : joined;
 	}
 }
