@@ -1,4 +1,4 @@
-namespace CvsChecker.Library.Services;
+namespace CvsChecker.Helpers;
 
 public static class AppVersion
 {

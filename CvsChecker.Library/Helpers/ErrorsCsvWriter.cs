@@ -1,7 +1,7 @@
 using CsvChecker.Library.Models;
 using System.Text;
 
-namespace CvsChecker.Library.Services;
+namespace CvsChecker.Library.Helpers;
 
 public static class ErrorsCsvWriter
 {

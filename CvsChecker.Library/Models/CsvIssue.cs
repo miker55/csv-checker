@@ -2,10 +2,22 @@
 
 public sealed class CsvIssue
 {
-    public required string Code { get; init; }          // e.g. "ROW_WIDTH_MISMATCH"
+    /// <summary>
+    /// e.g. "ROW_WIDTH_MISMATCH"
+    /// </summary>
+    public required string Code { get; init; }
     public required CsvIssueSeverity Severity { get; init; }
-    public required string Message { get; init; }       // human readable
-    public int? RowNumber { get; init; }                // 1-based data row (including header row if you want)
+    /// <summary>
+    /// human readable
+    /// </summary>
+    public required string Message { get; init; }
+    /// <summary>
+    /// 1-based data row (including header row if you want)
+    /// </summary>
+    public int? RowNumber { get; init; }
     public string? ColumnName { get; init; }
-    public string? Sample { get; init; }                // short snippet, not full row
+    /// <summary>
+    /// short snippet, not full row
+    /// </summary>
+    public string? Sample { get; init; }
 }
