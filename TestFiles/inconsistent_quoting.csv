@@ -1,2 +1,10 @@
+a,b,c
 1,"foo",bar
-2,baz,"qux"
+2,"foo",bar
+3,"foo",bar
+4,"foo",bar
+5,baz,"qux"
+6,baz,"qux"
+7,baz,"qux"
+8,baz,"qux"
+9,baz,"qux"

@@ -125,6 +125,12 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 		using var csv = new CsvReader(reader, config);
 		var trailingDelimiterHeader = false;
 
+		string[] headerRecord = Array.Empty<string>();
+		bool[] seenQuoted = Array.Empty<bool>();
+		bool[] seenUnquoted = Array.Empty<bool>();
+		int[] firstQuotedRow = Array.Empty<int>();
+		int[] firstUnquotedRow = Array.Empty<int>();
+
 		try
 		{
 			// Read header
@@ -132,7 +138,14 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 			{
 				rowCount++;
 				var header = csv.HeaderRecord ?? Array.Empty<string>();
+				headerRecord = header;
 				columnCount = header.Length;
+
+				// Initialize quoting trackers
+				seenQuoted = new bool[columnCount.Value];
+				seenUnquoted = new bool[columnCount.Value];
+				firstQuotedRow = Enumerable.Repeat(-1, columnCount.Value).ToArray();
+				firstUnquotedRow = Enumerable.Repeat(-1, columnCount.Value).ToArray();
 
 				// Header checks
 				var dupes = header
@@ -192,6 +205,35 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 				var record = csv.Parser.Record ?? Array.Empty<string>();
 				var recordLength = trailingDelimiterHeader ? record.Length - 1 : record.Length;
 
+				// Track quoting patterns per column
+				if (columnCount is not null)
+				{
+					var quotedFlags = GetQuotedFlagsFromRawRecord(csv.Parser.RawRecord, delimiter);
+
+					// Only compare overlapping columns
+					int n = Math.Min(Math.Min(record.Length, quotedFlags.Length), columnCount.Value);
+
+					for (int c = 0; c < n; c++)
+					{
+						if (quotedFlags[c])
+						{
+							if (!seenQuoted[c])
+							{
+								seenQuoted[c] = true;
+								firstQuotedRow[c] = rowCount;
+							}
+						}
+						else
+						{
+							if (!seenUnquoted[c])
+							{
+								seenUnquoted[c] = true;
+								firstUnquotedRow[c] = rowCount;
+							}
+						}
+					}
+				}
+
 				// Whitespace-only row
 				if (record.All(f => string.IsNullOrWhiteSpace(f)))
 				{
@@ -226,6 +268,40 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 						RowNumber = rowCount,
 						Sample = SampleRow(record)
 					});
+				}
+			}
+
+			// Check for inconsistent quoting after all records are read
+			if (columnCount is not null)
+			{
+				for (int c = 0; c < columnCount.Value; c++)
+				{
+					if (seenQuoted[c] && seenUnquoted[c])
+					{
+						string? colName = null;
+						if (c < headerRecord.Length)
+						{
+							var name = headerRecord[c]?.Trim();
+							if (!string.IsNullOrWhiteSpace(name))
+								colName = name;
+						}
+
+						// pick a row number that points to the "second style" we discovered
+						var qRow = firstQuotedRow[c];
+						var uRow = firstUnquotedRow[c];
+						var rowForIssue = (qRow > 0 && uRow > 0) ? Math.Max(qRow, uRow) : (qRow > 0 ? qRow : uRow);
+
+						issues.Add(new CsvIssue
+						{
+							IssueType = CsvIssueType.INCONSISTENT_QUOTING,
+							Severity = CsvIssueSeverity.Warning,
+							Message = colName is not null
+								? $"Column '{colName}' is inconsistently quoted (quoted at row {qRow}, unquoted at row {uRow}). Some importers may treat values inconsistently."
+								: $"Column {c + 1} is inconsistently quoted (quoted at row {qRow}, unquoted at row {uRow}). Some importers may treat values inconsistently.",
+							RowNumber = rowForIssue,
+							ColumnName = colName
+						});
+					}
 				}
 			}
 		}
@@ -394,5 +470,72 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 	{
 		var joined = string.Join(" | ", fields.Select(f => f.Length > 30 ? f[..30] + "…" : f));
 		return joined.Length > 200 ? joined[..200] + "…" : joined;
+	}
+
+	private static bool[] GetQuotedFlagsFromRawRecord(
+		string? rawRecord
+		, char delimiter)
+	{
+		if (string.IsNullOrEmpty(rawRecord))
+			return Array.Empty<bool>();
+
+		// CsvHelper RawRecord usually includes line ending; trim it.
+		var s = rawRecord.TrimEnd('\r', '\n');
+
+		var flags = new List<bool>();
+		int i = 0;
+
+		while (true)
+		{
+			bool isQuoted = false;
+
+			// Detect quoting only if the field begins with a quote
+			if (i < s.Length && s[i] == '"')
+			{
+				isQuoted = true;
+				i++; // consume opening quote
+
+				// consume until closing quote, handling escaped quotes ("")
+				while (i < s.Length)
+				{
+					if (s[i] == '"')
+					{
+						// Escaped quote
+						if (i + 1 < s.Length && s[i + 1] == '"')
+						{
+							i += 2;
+							continue;
+						}
+
+						// Closing quote
+						i++;
+						break;
+					}
+
+					i++;
+				}
+
+				// After a quoted field, consume until delimiter or end
+				while (i < s.Length && s[i] != delimiter)
+					i++;
+			}
+			else
+			{
+				// Unquoted field: consume until delimiter or end
+				while (i < s.Length && s[i] != delimiter)
+					i++;
+			}
+
+			flags.Add(isQuoted);
+
+			if (i >= s.Length)
+				break;
+
+			// Consume delimiter and continue
+			if (s[i] == delimiter)
+				i++;
+		}
+
+		return flags.ToArray();
 	}
 }
