@@ -165,7 +165,7 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 					});
 				}
 
-				// Empty header names
+				// Empty header names and whitespace detection
 				for (var i = 0; i < header.Length; i++)
 				{
 					if (string.IsNullOrWhiteSpace(header[i]))
@@ -191,6 +191,18 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 								RowNumber = 1
 							});
 						}
+					}
+					else if (!string.IsNullOrEmpty(header[i]) && header[i] != header[i].Trim())
+					{
+						// Header has leading or trailing whitespace
+						issues.Add(new CsvIssue
+						{
+							IssueType = CsvIssueType.WHITESPACE_IN_HEADERS,
+							Severity = CsvIssueSeverity.Warning,
+							Message = $"Header column '{header[i]}' contains leading/trailing whitespace that may cause duplicate or mismatched columns.",
+							RowNumber = 1,
+							ColumnName = header[i].Trim()
+						});
 					}
 				}
 			}
