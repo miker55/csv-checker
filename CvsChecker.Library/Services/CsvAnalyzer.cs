@@ -1,12 +1,23 @@
+using CsvChecker.Library.Models;
 using CsvHelper;
 using CsvHelper.Configuration;
+using CvsChecker.Library.Helpers;
+using CvsChecker.Library.Services.Interfaces;
 using System.Globalization;
 using System.Text;
-using CsvChecker.Library.Models;
-using CvsChecker.Library.Services.Interfaces;
 
 namespace CvsChecker.Library.Services;
 
+/// <summary>
+/// FEATURES
+///   1.  Encoding detection
+///   2.  Newline detection
+///   3.  Text decoding
+///   4.  Delimiter detection
+/// 
+/// ISSUES
+///   See CsvIssueType enum
+/// </summary>
 public sealed class CsvAnalyzer : ICsvAnalyzer
 {
 	private readonly ITelemetryService _telemetry;
@@ -21,16 +32,14 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 		, byte[] bytes
 		, CancellationToken ct)
 	{
-		// Encoding detection (simple v1): UTF-8 with BOM vs without, fallback to UTF-8
+		// (simple v1): UTF-8 with BOM vs without, fallback to UTF-8
 		var encoding = DetectEncoding(bytes, out var hadBom);
 
-		// Newline detection
 		var newline = DetectNewlines(bytes);
 
-		// Decode text
 		var text = encoding.GetString(bytes);
 
-		// Delimiter detection (simple heuristic)
+		// (simple heuristic)
 		var delimiter = DetectDelimiter(text);
 
 		var issues = new List<CsvIssue>();
@@ -55,7 +64,7 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 
 			issues.Add(new CsvIssue
 			{
-				Code = "UNCLOSED_QUOTE",
+				IssueType = CsvIssueType.UNCLOSED_QUOTE,
 				Severity = CsvIssueSeverity.Error,
 				Message = "File ends with an unclosed quoted field. This CSV is malformed and may not import correctly.",
 				RowNumber = unclosed.Value.Row,
@@ -82,7 +91,7 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 		{
 			issues.Add(new CsvIssue
 			{
-				Code = "UTF8_BOM",
+				IssueType = CsvIssueType.UTF8_BOM,
 				Severity = CsvIssueSeverity.Info,
 				Message = "File appears to contain a UTF-8 BOM. Some importers may mis-handle BOM in headers."
 			});
@@ -92,7 +101,7 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 		{
 			issues.Add(new CsvIssue
 			{
-				Code = "LINE_ENDINGS_MIXED",
+				IssueType = CsvIssueType.MIXED_LINE_ENDINGS,
 				Severity = CsvIssueSeverity.Warning,
 				Message = "File contains mixed line endings (LF/CRLF). This can confuse some parsers."
 			});
@@ -114,6 +123,7 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 
 		using var reader = new StringReader(text);
 		using var csv = new CsvReader(reader, config);
+		var trailingDelimiterHeader = false;
 
 		try
 		{
@@ -136,7 +146,7 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 				{
 					issues.Add(new CsvIssue
 					{
-						Code = "HEADER_DUPLICATE",
+						IssueType = CsvIssueType.DUPLICATE_HEADER,
 						Severity = CsvIssueSeverity.Error,
 						Message = $"Duplicate header column name: '{d}'. Many importers require unique column names."
 					});
@@ -147,13 +157,27 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 				{
 					if (string.IsNullOrWhiteSpace(header[i]))
 					{
-						issues.Add(new CsvIssue
+						if (i == header.Length - 1)
 						{
-							Code = "HEADER_EMPTY",
-							Severity = CsvIssueSeverity.Warning,
-							Message = $"Header column {i + 1} is empty.",
-							RowNumber = 1
-						});
+							// Trailing delimiter case
+							columnCount--;
+							issues.Add(new CsvIssue
+							{
+								IssueType = CsvIssueType.TRAILING_DELIMITER_HEADER,
+								Severity = CsvIssueSeverity.Warning,
+								Message = "Header row appears to have a trailing delimiter, resulting in an empty final column.",
+							});
+						}
+						else
+						{
+							issues.Add(new CsvIssue
+							{
+								IssueType = CsvIssueType.HEADER_EMPTY,
+								Severity = CsvIssueSeverity.Warning,
+								Message = $"Header column {i + 1} is empty.",
+								RowNumber = 1
+							});
+						}
 					}
 				}
 			}
@@ -166,13 +190,14 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 
 				// CsvHelper exposes current record fields via Parser.Record
 				var record = csv.Parser.Record ?? Array.Empty<string>();
+				var recordLength = trailingDelimiterHeader ? record.Length - 1 : record.Length;
 
 				// Whitespace-only row
 				if (record.All(f => string.IsNullOrWhiteSpace(f)))
 				{
 					issues.Add(new CsvIssue
 					{
-						Code = "BLANK_ROW",
+						IssueType = CsvIssueType.BLANK_ROW,
 						Severity = CsvIssueSeverity.Info, // or Warning if you want more visibility
 						Message = "Row contains only whitespace and will be ignored by most importers.",
 						RowNumber = rowCount
@@ -181,11 +206,21 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 					continue;
 				}
 
-				if (columnCount is not null && record.Length != columnCount.Value)
+				if (string.IsNullOrWhiteSpace(record[^1]))
 				{
 					issues.Add(new CsvIssue
 					{
-						Code = "ROW_WIDTH_MISMATCH",
+						IssueType = CsvIssueType.TRAILING_DELIMITER_ROW,
+						Severity = CsvIssueSeverity.Warning,
+						Message = "Row appears to have a trailing delimiter, resulting in an extra empty field.",
+						RowNumber = rowCount
+					});
+				}
+				else if (columnCount is not null && record.Length != columnCount.Value)
+				{
+					issues.Add(new CsvIssue
+					{
+						IssueType = CsvIssueType.ROW_WIDTH_MISMATCH,
 						Severity = CsvIssueSeverity.Error,
 						Message = $"Row has {record.Length} fields but header has {columnCount.Value}.",
 						RowNumber = rowCount,
@@ -208,7 +243,7 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 
 			issues.Add(new CsvIssue
 			{
-				Code = "CSV_PARSE_FAILED",
+				IssueType = CsvIssueType.CSV_PARSE_FAILED,
 				Severity = CsvIssueSeverity.Error,
 				Message = "The CSV could not be fully parsed due to a structural error. This file may be malformed or use features not supported by the current rules."
 			});
