@@ -1,12 +1,15 @@
-﻿namespace CsvChecker.Library.Models;
+﻿using CvsChecker.Library.Helpers;
+
+namespace CsvChecker.Library.Models;
 
 public sealed class CsvIssue
 {
     /// <summary>
     /// e.g. "ROW_WIDTH_MISMATCH"
     /// </summary>
-    public required string Code { get; init; }
-    public required CsvIssueSeverity Severity { get; init; }
+    public string Code { get { return IssueType.ToString(); } }
+    public required CsvIssueType IssueType { get; init; }
+	public required CsvIssueSeverity Severity { get; init; }
     /// <summary>
     /// human readable
     /// </summary>

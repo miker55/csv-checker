@@ -1,4 +1,4 @@
-﻿namespace CsvChecker.Library.Models;
+﻿namespace CvsChecker.Library.Helpers;
 
 public enum CsvIssueSeverity
 {
