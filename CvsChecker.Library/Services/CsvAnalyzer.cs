@@ -20,6 +20,27 @@ namespace CvsChecker.Library.Services;
 /// </summary>
 public sealed class CsvAnalyzer : ICsvAnalyzer
 {
+	private enum SimpleValueKind
+	{
+		Empty,
+		Number,
+		Date,
+		Text
+	}
+
+	private static readonly string[] DateFormats =
+	[
+		"yyyy-MM-dd",
+		"yyyy/MM/dd",
+		"MM/dd/yyyy",
+		"M/d/yyyy",
+		"dd/MM/yyyy",
+		"d/M/yyyy",
+		"yyyy-MM-ddTHH:mm:ss",
+		"yyyy-MM-ddTHH:mm:ssZ",
+		"yyyy-MM-ddTHH:mm:ss.fffZ",
+	];
+
 	private readonly ITelemetryService _telemetry;
 
 	public CsvAnalyzer(ITelemetryService telemetry)
@@ -131,6 +152,19 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 		int[] firstQuotedRow = Array.Empty<int>();
 		int[] firstUnquotedRow = Array.Empty<int>();
 
+		// Type tracking arrays (declared here for broader scope)
+		int[] emptyCounts = Array.Empty<int>();
+		int[] numberCounts = Array.Empty<int>();
+		int[] dateCounts = Array.Empty<int>();
+		int[] textCounts = Array.Empty<int>();
+		int[] firstNonEmptyRow = Array.Empty<int>();
+		int[] firstTextRow = Array.Empty<int>();
+		int[] firstNumberRow = Array.Empty<int>();
+		int[] firstDateRow = Array.Empty<int>();
+		string?[] exampleText = Array.Empty<string?>();
+		string?[] exampleNumber = Array.Empty<string?>();
+		string?[] exampleDate = Array.Empty<string?>();
+
 		try
 		{
 			// Read header
@@ -146,6 +180,21 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 				seenUnquoted = new bool[columnCount.Value];
 				firstQuotedRow = Enumerable.Repeat(-1, columnCount.Value).ToArray();
 				firstUnquotedRow = Enumerable.Repeat(-1, columnCount.Value).ToArray();
+
+				// Initialize type tracking arrays
+				emptyCounts = new int[columnCount.Value];
+				numberCounts = new int[columnCount.Value];
+				dateCounts = new int[columnCount.Value];
+				textCounts = new int[columnCount.Value];
+
+				firstNonEmptyRow = Enumerable.Repeat(-1, columnCount.Value).ToArray();
+				firstTextRow = Enumerable.Repeat(-1, columnCount.Value).ToArray();
+				firstNumberRow = Enumerable.Repeat(-1, columnCount.Value).ToArray();
+				firstDateRow = Enumerable.Repeat(-1, columnCount.Value).ToArray();
+
+				exampleText = new string?[columnCount.Value];
+				exampleNumber = new string?[columnCount.Value];
+				exampleDate = new string?[columnCount.Value];
 
 				// Header checks
 				var dupes = header
@@ -244,6 +293,40 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 							}
 						}
 					}
+
+					// Track value types per column
+					for (int c = 0; c < n; c++)
+					{
+						var kind = ClassifyValue(record[c]);
+
+						if (kind != SimpleValueKind.Empty && firstNonEmptyRow[c] < 0)
+							firstNonEmptyRow[c] = rowCount;
+
+						switch (kind)
+						{
+							case SimpleValueKind.Empty:
+								emptyCounts[c]++;
+								break;
+
+							case SimpleValueKind.Number:
+								numberCounts[c]++;
+								if (firstNumberRow[c] < 0) firstNumberRow[c] = rowCount;
+								exampleNumber[c] ??= record[c];
+								break;
+
+							case SimpleValueKind.Date:
+								dateCounts[c]++;
+								if (firstDateRow[c] < 0) firstDateRow[c] = rowCount;
+								exampleDate[c] ??= record[c];
+								break;
+
+							case SimpleValueKind.Text:
+								textCounts[c]++;
+								if (firstTextRow[c] < 0) firstTextRow[c] = rowCount;
+								exampleText[c] ??= record[c];
+								break;
+						}
+					}
 				}
 
 				// Whitespace-only row
@@ -314,6 +397,83 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 							ColumnName = colName
 						});
 					}
+				}
+			}
+
+			// Check for column type instability
+			if (columnCount is not null)
+			{
+				for (int c = 0; c < columnCount.Value; c++)
+				{
+					int nonEmpty = numberCounts[c] + dateCounts[c] + textCounts[c];
+					if (nonEmpty < 10)
+						continue;
+
+					double pNum = (double)numberCounts[c] / nonEmpty;
+					double pDate = (double)dateCounts[c] / nonEmpty;
+					double pText = (double)textCounts[c] / nonEmpty;
+
+					// "Significant" presence threshold
+					bool hasNum = pNum >= 0.10;
+					bool hasDate = pDate >= 0.10;
+					bool hasText = pText >= 0.10;
+
+					int kinds = (hasNum ? 1 : 0) + (hasDate ? 1 : 0) + (hasText ? 1 : 0);
+
+					// Strong signal: mixed major kinds
+					bool chaotic = kinds >= 2;
+
+					// Also flag: mostly numeric/date but some text sneaks in
+					if (!chaotic)
+					{
+						bool mostlyNumOrDate = (pNum >= 0.80) || (pDate >= 0.80);
+						bool meaningfulText = pText >= 0.05;
+						chaotic = mostlyNumOrDate && meaningfulText;
+					}
+
+					if (!chaotic)
+						continue;
+
+					string? colName = null;
+					if (c < headerRecord.Length)
+					{
+						var name = headerRecord[c]?.Trim();
+						if (!string.IsNullOrWhiteSpace(name))
+							colName = name;
+					}
+
+					// Pick a row to point at: first "minority" kind if possible
+					int rowHint = firstNonEmptyRow[c];
+					if (pText > 0 && (pNum >= 0.80 || pDate >= 0.80) && firstTextRow[c] > 0)
+						rowHint = firstTextRow[c];
+					else if (pNum > 0 && pText >= 0.80 && firstNumberRow[c] > 0)
+						rowHint = firstNumberRow[c];
+					else if (pDate > 0 && pText >= 0.80 && firstDateRow[c] > 0)
+						rowHint = firstDateRow[c];
+
+					// Build a readable message
+					string Describe(double p) => $"{Math.Round(p * 100)}%";
+					var parts = new List<string>();
+					if (numberCounts[c] > 0) parts.Add($"numbers ({Describe(pNum)})");
+					if (dateCounts[c] > 0) parts.Add($"dates ({Describe(pDate)})");
+					if (textCounts[c] > 0) parts.Add($"text ({Describe(pText)})");
+
+					string example =
+						exampleText[c] is not null ? $" Example text: '{Truncate(exampleText[c], 32)}'." :
+						exampleDate[c] is not null ? $" Example date: '{Truncate(exampleDate[c], 32)}'." :
+						exampleNumber[c] is not null ? $" Example number: '{Truncate(exampleNumber[c], 32)}'." :
+						"";
+
+					issues.Add(new CsvIssue
+					{
+						IssueType = CsvIssueType.COLUMN_TYPE_INSTABILITY,
+						Severity = CsvIssueSeverity.Warning,
+						Message = colName is not null
+							? $"Column '{colName}' contains mixed value types: {string.Join(", ", parts)}.{example} This can cause importers to treat values inconsistently."
+							: $"Column {c + 1} contains mixed value types: {string.Join(", ", parts)}.{example} This can cause importers to treat values inconsistently.",
+						RowNumber = rowHint > 0 ? rowHint : null,
+						ColumnName = colName
+					});
 				}
 			}
 		}
@@ -549,5 +709,46 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 		}
 
 		return flags.ToArray();
+	}
+
+	private static SimpleValueKind ClassifyValue(string? value)
+	{
+		if (string.IsNullOrWhiteSpace(value))
+			return SimpleValueKind.Empty;
+
+		var v = value.Trim();
+
+		// Number (Invariant)
+		if (decimal.TryParse(
+			v
+			, NumberStyles.Number
+			, CultureInfo.InvariantCulture
+			, out _))
+		{
+			return SimpleValueKind.Number;
+		}
+
+		// Date (strict-ish formats, invariant)
+		if (DateTime.TryParseExact(
+			v
+			, DateFormats
+			, CultureInfo.InvariantCulture
+			, DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.AssumeLocal
+			, out _))
+		{
+			return SimpleValueKind.Date;
+		}
+
+		return SimpleValueKind.Text;
+	}
+
+	private static string Truncate(
+		string? s
+		, int max)
+	{
+		if (string.IsNullOrEmpty(s) || s.Length <= max)
+			return s ?? string.Empty;
+
+		return s[..(max - 1)] + "…";
 	}
 }
