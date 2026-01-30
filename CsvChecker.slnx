@@ -6,6 +6,22 @@
     <File Path=".gitignore" />
     <File Path="README.md" />
   </Folder>
+  <Folder Name="/TestFiles/">
+    <File Path="TestFiles/blank_lines.csv" />
+    <File Path="TestFiles/clean.csv" />
+    <File Path="TestFiles/column_type_instability.csv" />
+    <File Path="TestFiles/competition_tester.csv" />
+    <File Path="TestFiles/inconsistent_quoting.csv" />
+    <File Path="TestFiles/kitchen_sink.csv" />
+    <File Path="TestFiles/mixed_issues.csv" />
+    <File Path="TestFiles/quoted_commas.csv" />
+    <File Path="TestFiles/ragged_rows.csv" />
+    <File Path="TestFiles/semicolon.csv" />
+    <File Path="TestFiles/trailing_delimiters.csv" />
+    <File Path="TestFiles/unclosed_quote.csv" />
+    <File Path="TestFiles/utf8.csv" />
+    <File Path="TestFiles/whitespace_in_headers.csv" />
+  </Folder>
   <Project Path="CsvChecker/CsvChecker.csproj" />
   <Project Path="CvsChecker.Library/CvsChecker.Library.csproj" Id="86dc5cf4-ba1d-4e21-861d-19b14982a3cf" />
 </Solution>
