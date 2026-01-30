@@ -1,16 +1,187 @@
 ﻿@page "/contact"
+@using CvsChecker.Library.Services.Interfaces
+@using CvsChecker.Library.Helpers
+@inject IEmailHelper EmailHelper
+@inject ITelemetryService TelemetryService
+@inject NavigationManager Navigation
 
-<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-    <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Contact</h1>
+@if (submitted)
+{
+	<div class="mx-auto max-w-xl px-4 py-24 text-center">
+		<div class="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-teal-100 text-teal-600">
+			<svg class="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+			</svg>
+		</div>
+		<h2 class="mb-4 text-3xl font-bold text-slate-900">Request Received</h2>
+		<p class="mb-10 leading-relaxed text-slate-600">
+			Thank you for reaching out! Our team has received your message and will get back to you shortly.
+		</p>
+		<button @onclick="HandleBackToDashboard"
+				class="rounded-xl bg-teal-600 px-8 py-3 font-semibold text-white shadow-lg shadow-teal-600/20 transition-all hover:bg-teal-700">
+			Back to Dashboard
+		</button>
+	</div>
+}
+else
+{
+	<div class="mx-auto max-w-2xl px-4 py-16">
+		<div class="mb-10 text-center">
+			<h2 class="text-3xl font-extrabold text-slate-900">Feedback & Support</h2>
+			<p class="mt-3 text-slate-500">
+				Have an idea to improve CSV Checker or found a bug? We'd love to hear from you!
+			</p>
+		</div>
 
-    <p class="mt-6 text-slate-600 leading-relaxed">
-        Questions, bug reports, or feature requests? Send details (and a sample CSV if possible).
-    </p>
+		<div class="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+			<EditForm Model="@formModel" OnValidSubmit="HandleSubmit">
+				<DataAnnotationsValidator />
 
-    <div class="mt-8 p-6 rounded-2xl bg-slate-50 border border-slate-200">
-        <p class="text-slate-700 font-medium">Email</p>
-        <p class="text-slate-600 text-sm mt-1">
-            Add your contact email address here.
-        </p>
-    </div>
-</div>
+				<div class="space-y-6">
+					<div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+						<div>
+							<label for="name" class="mb-2 block text-sm font-semibold text-slate-700">Full Name</label>
+							<InputText @bind-Value="formModel.FullName"
+									   id="name"
+									   placeholder="Jane Doe"
+									   class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none transition-all placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20" />
+							<ValidationMessage For="@(() => formModel.FullName)" class="text-red-600 text-sm mt-1" />
+						</div>
+						<div>
+							<label for="email" class="mb-2 block text-sm font-semibold text-slate-700">Email Address</label>
+							<InputText @bind-Value="formModel.EmailAddress"
+									   type="email"
+									   id="email"
+									   placeholder="jane@example.com"
+									   class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none transition-all placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20" />
+							<ValidationMessage For="@(() => formModel.EmailAddress)" class="text-red-600 text-sm mt-1" />
+						</div>
+					</div>
+
+					<div>
+						<label for="subject" class="mb-2 block text-sm font-semibold text-slate-700">Subject</label>
+						<InputText @bind-Value="formModel.Subject"
+								   id="subject"
+								   placeholder="Common topics: Bug, Feature idea, Question"
+								   class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none transition-all placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20" />
+						<ValidationMessage For="@(() => formModel.Subject)" class="text-red-600 text-sm mt-1" />
+					</div>
+
+					<div>
+						<label for="message" class="mb-2 block text-sm font-semibold text-slate-700">Message</label>
+						<InputTextArea @bind-Value="formModel.Message"
+									   id="message"
+									   rows="5"
+									   placeholder="Tell us what you were trying to do and what you noticed."
+									   class="w-full resize-none rounded-xl border border-slate-200 px-4 py-3 outline-none transition-all placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20" />
+						<ValidationMessage For="@(() => formModel.Message)" class="text-red-600 text-sm mt-1" />
+					</div>
+
+					@if (!string.IsNullOrEmpty(errorMessage))
+					{
+						<div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+							@errorMessage
+						</div>
+					}
+
+					<div class="pt-2">
+						<button disabled="@loading"
+								type="submit"
+								class="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-600 py-4 font-bold text-white shadow-lg shadow-teal-600/20 transition-all hover:bg-teal-700 disabled:opacity-50">
+							@if (loading)
+							{
+								<svg class="h-5 w-5 animate-spin text-white" viewBox="0 0 24 24">
+									<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+									<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+								</svg>
+								<span>Sending...</span>
+							}
+							else
+							{
+								<span>Submit Request</span>
+							}
+						</button>
+					</div>
+				</div>
+			</EditForm>
+		</div>
+
+		<button @onclick="HandleBackToDashboard"
+				class="mx-auto mt-8 flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-teal-600">
+			<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+			</svg>
+			Cancel and return home
+		</button>
+	</div>
+}
+
+@code {
+	private ContactFormModel formModel = new();
+	private bool loading = false;
+	private bool submitted = false;
+	private string? errorMessage = null;
+
+	private async Task HandleSubmit()
+	{
+		loading = true;
+		errorMessage = null;
+		StateHasChanged();
+
+		try
+		{
+			var emailBody = $@"Contact Form Submission
+
+Name: {formModel.FullName}
+Email: {formModel.EmailAddress}
+Subject: {formModel.Subject}
+
+Message:
+{formModel.Message}";
+
+			await EmailHelper.SendAsync(
+				$"CSV Checker - {formModel.Subject}",
+				emailBody,
+				false);
+
+			submitted = true;
+
+			await TelemetryService.TryTrackAsync(
+				"contact_form_submitted",
+				message: formModel.Subject);
+		}
+		catch (Exception ex)
+		{
+			errorMessage = "Failed to send your message. Please try again later or contact us directly via email.";
+
+			await TelemetryService.TryTrackAsync(
+				TelemetryEventType.EmailFailed,
+				message: $"Contact form error: {ex.Message}");
+		}
+		finally
+		{
+			loading = false;
+			StateHasChanged();
+		}
+	}
+
+	private void HandleBackToDashboard()
+	{
+		Navigation.NavigateTo("/");
+	}
+
+	public class ContactFormModel
+	{
+		[System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Full name is required")]
+		public string FullName { get; set; } = string.Empty;
+
+		[System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Email address is required")]
+		[System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "Invalid email address")]
+		public string EmailAddress { get; set; } = string.Empty;
+
+		public string Subject { get; set; } = string.Empty;
+
+		[System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Message is required")]
+		public string Message { get; set; } = string.Empty;
+	}
+}
