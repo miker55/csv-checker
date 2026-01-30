@@ -326,6 +326,29 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 								exampleText[c] ??= record[c];
 								break;
 						}
+
+						// Check for invalid dates
+						if (!string.IsNullOrWhiteSpace(record[c]) && IsInvalidDate(record[c]))
+						{
+							string? colName = null;
+							if (c < headerRecord.Length)
+							{
+								var name = headerRecord[c]?.Trim();
+								if (!string.IsNullOrWhiteSpace(name))
+									colName = name;
+							}
+
+							issues.Add(new CsvIssue
+							{
+								IssueType = CsvIssueType.INVALID_DATE,
+								Severity = CsvIssueSeverity.Warning,
+								Message = colName is not null
+									? $"Column '{colName}' contains an invalid date value: '{record[c]}'."
+									: $"Column {c + 1} contains an invalid date value: '{record[c]}'.",
+								RowNumber = rowCount,
+								ColumnName = colName
+							});
+						}
 					}
 				}
 
@@ -480,14 +503,14 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 		catch (Exception ex)
 		{
 			await _telemetry.TryTrackAsync(
-				eventType: TelemetryEventType.AnalysisFailed
-				, rowCount: null
-				, columnCount: null
-				, fileSizeBytes: bytes.LongLength
-				, issueCount: issues.Count
-				, message: ex.Message
-				, ct: ct
-			);
+						eventType: TelemetryEventType.AnalysisFailed
+						, rowCount: null
+						, columnCount: null
+						, fileSizeBytes: bytes.LongLength
+						, issueCount: issues.Count
+						, message: ex.Message
+						, ct: ct
+					);
 
 			issues.Add(new CsvIssue
 			{
@@ -509,7 +532,7 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 			DetectedDelimiter = delimiter,
 			RowCount = rowCount == 0 ? null : rowCount,
 			ColumnCount = columnCount,
-			Issues = issues
+			Issues = issues.OrderBy(i => i.Severity).ThenBy(i => i.RowNumber).ToList()
 		};
 	}
 
@@ -750,5 +773,59 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 			return s ?? string.Empty;
 
 		return s[..(max - 1)] + "…";
+	}
+
+	private static bool IsInvalidDate(string value)
+	{
+		if (string.IsNullOrWhiteSpace(value))
+			return false;
+
+		var v = value.Trim();
+
+		// Pattern: looks like a date (contains slashes or hyphens and digits)
+		if (!v.Any(c => c == '/' || c == '-'))
+			return false;
+
+		// Split by common date separators
+		var parts = v.Split(['/', '-'], StringSplitOptions.RemoveEmptyEntries);
+		if (parts.Length < 2 || parts.Length > 3)
+			return false;
+
+		// All parts should be numeric
+		if (!parts.All(p => int.TryParse(p, out _)))
+			return false;
+
+		// Try parsing as various date formats
+		var formats = new[]
+		{
+			"M/d/yyyy", "MM/dd/yyyy", "M/d/yy", "MM/dd/yy",
+			"d/M/yyyy", "dd/MM/yyyy", "d/M/yy", "dd/MM/yy",
+			"yyyy/M/d", "yyyy/MM/dd", "yy/M/d", "yy/MM/dd",
+			"M-d-yyyy", "MM-dd-yyyy", "M-d-yy", "MM-dd-yy",
+			"d-M-yyyy", "dd-MM-yyyy", "d-M-yy", "dd-MM-yy",
+			"yyyy-M-d", "yyyy-MM-dd", "yy-M-d", "yy-MM-dd",
+		};
+
+		// If it parses successfully in ANY reasonable format, it's valid
+		if (DateTime.TryParseExact(
+			v
+			, formats
+			, CultureInfo.InvariantCulture
+			, DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.AssumeLocal
+			, out _))
+		{
+			return false;
+		}
+
+		// Check for objectively invalid parts
+		// Parse the individual parts to check for impossible values
+		var numbers = parts.Select(p => int.Parse(p)).ToArray();
+
+		// Check for impossible month (>12) or day (>31)
+		bool hasImpossibleValue = numbers.Any(n => n > 31 && n < 100) || // day/month range but invalid
+								  numbers.Any(n => n > 12 && n <= 31); // likely month>12 or day>31
+
+		// If it looks like a date pattern but has impossible values, it's invalid
+		return hasImpossibleValue;
 	}
 }
