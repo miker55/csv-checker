@@ -28,5 +28,5 @@ public sealed class CsvAnalysisResult
 	public int? RowCount { get; init; }
     public int? ColumnCount { get; init; }
 
-    public required List<CsvIssue> Issues { get; init; } = new();
+    public List<CsvIssue> Issues { get; init; } = new();
 }

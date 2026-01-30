@@ -53,97 +53,17 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 		, byte[] bytes
 		, CancellationToken ct)
 	{
-		// (simple v1): UTF-8 with BOM vs without, fallback to UTF-8
-		var encoding = DetectEncoding(bytes, out var hadBom);
-
-		var newline = DetectNewlines(bytes);
-
-		var text = encoding.GetString(bytes);
-
-		// (simple heuristic)
-		var delimiter = DetectDelimiter(text);
-
 		var issues = new List<CsvIssue>();
 
-		// Structural validation: unclosed quoted field at EOF
-		var unclosed = GetUnclosedQuoteStart(text, delimiter);
-		if (unclosed.HasValue)
-		{
-			string? columnName = null;
-
-			var headers = TryGetHeadersWithCsvHelper(text, delimiter);
-			if (headers is not null)
-			{
-				var idx = unclosed.Value.FieldIndex - 1;
-				if (idx >= 0 && idx < headers.Length)
-				{
-					var name = headers[idx]?.Trim();
-					if (!string.IsNullOrWhiteSpace(name))
-						columnName = name;
-				}
-			}
-
-			issues.Add(new CsvIssue
-			{
-				IssueType = CsvIssueType.UNCLOSED_QUOTE,
-				Severity = CsvIssueSeverity.Error,
-				Message = "File ends with an unclosed quoted field. This CSV is malformed and may not import correctly.",
-				RowNumber = unclosed.Value.Row,
-				ColumnName = columnName
-			});
-
-			// Stop here: further parsing may be misleading for malformed CSV.
-			var tokenEarly = Guid.NewGuid().ToString("N");
-			return new CsvAnalysisResult
-			{
-				Token = tokenEarly,
-				FileName = fileName,
-				FileSizeBytes = bytes.LongLength,
-				DetectedEncoding = encoding.WebName.ToUpperInvariant(),
-				DetectedNewline = newline,
-				DetectedDelimiter = delimiter,
-				RowCount = null,       // unknown / unreliable
-				ColumnCount = null,    // unknown / unreliable
-				Issues = issues
-			};
-		}
-
-		if (hadBom)
-		{
-			issues.Add(new CsvIssue
-			{
-				IssueType = CsvIssueType.UTF8_BOM,
-				Severity = CsvIssueSeverity.Info,
-				Message = "File appears to contain a UTF-8 BOM. Some importers may mis-handle BOM in headers."
-			});
-		}
-
-		if (newline == "Mixed")
-		{
-			issues.Add(new CsvIssue
-			{
-				IssueType = CsvIssueType.MIXED_LINE_ENDINGS,
-				Severity = CsvIssueSeverity.Warning,
-				Message = "File contains mixed line endings (LF/CRLF). This can confuse some parsers."
-			});
-		}
+		Encoding? encoding = null;
+		string? newline = null;
+		char? delimiter = null;
 
 		// Parse CSV using CsvHelper
 		// We'll count row/column consistency and detect ragged rows.
 		int? columnCount = null;
 		int rowCount = 0;
 
-		var config = new CsvConfiguration(CultureInfo.InvariantCulture)
-		{
-			HasHeaderRecord = true,
-			Delimiter = delimiter.ToString(),
-			BadDataFound = null, // we'll handle issues ourselves later
-			MissingFieldFound = null,
-			DetectDelimiter = false
-		};
-
-		using var reader = new StringReader(text);
-		using var csv = new CsvReader(reader, config);
 		var trailingDelimiterHeader = false;
 
 		string[] headerRecord = Array.Empty<string>();
@@ -167,6 +87,51 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 
 		try
 		{
+			// (simple v1): UTF-8 with BOM vs without, fallback to UTF-8
+			encoding = DetectEncoding(bytes, out var hadBom);
+			newline = DetectNewlines(bytes);
+
+			var text = encoding.GetString(bytes);
+
+			// (simple heuristic)
+			delimiter = DetectDelimiter(text);
+
+			if (hadBom)
+			{
+				issues.Add(new CsvIssue
+				{
+					IssueType = CsvIssueType.UTF8_BOM,
+					Severity = CsvIssueSeverity.Info,
+					Message = "File appears to contain a UTF-8 BOM. Some importers may mis-handle BOM in headers."
+				});
+			}
+
+			if (newline == "Mixed")
+			{
+				issues.Add(new CsvIssue
+				{
+					IssueType = CsvIssueType.MIXED_LINE_ENDINGS,
+					Severity = CsvIssueSeverity.Warning,
+					Message = "File contains mixed line endings (LF/CRLF). This can confuse some parsers."
+				});
+			}
+
+			// look for an unclosed quote first
+			(bool flowControl, CsvAnalysisResult value) = DetectUnclosedQuote(fileName, bytes, encoding, newline, text, delimiter.Value, issues);
+			if (!flowControl) return value;
+
+			var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+			{
+				HasHeaderRecord = true,
+				Delimiter = delimiter.Value.ToString(),
+				BadDataFound = null, // we'll handle issues ourselves later
+				MissingFieldFound = null,
+				DetectDelimiter = false
+			};
+
+			using var reader = new StringReader(text);
+			using var csv = new CsvReader(reader, config);
+
 			// Read header
 			if (await csv.ReadAsync() && csv.ReadHeader())
 			{
@@ -269,7 +234,7 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 				// Track quoting patterns per column
 				if (columnCount is not null)
 				{
-					var quotedFlags = GetQuotedFlagsFromRawRecord(csv.Parser.RawRecord, delimiter);
+					var quotedFlags = GetQuotedFlagsFromRawRecord(csv.Parser.RawRecord, delimiter.Value);
 
 					// Only compare overlapping columns
 					int n = Math.Min(Math.Min(record.Length, quotedFlags.Length), columnCount.Value);
@@ -503,14 +468,14 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 		catch (Exception ex)
 		{
 			await _telemetry.TryTrackAsync(
-						eventType: TelemetryEventType.AnalysisFailed
-						, rowCount: null
-						, columnCount: null
-						, fileSizeBytes: bytes.LongLength
-						, issueCount: issues.Count
-						, message: ex.Message
-						, ct: ct
-					);
+				eventType: TelemetryEventType.AnalysisFailed
+				, rowCount: null
+				, columnCount: null
+				, fileSizeBytes: bytes.LongLength
+				, issueCount: issues.Count
+				, message: ex.Message
+				, ct: ct
+			);
 
 			issues.Add(new CsvIssue
 			{
@@ -527,7 +492,7 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 			Token = token,
 			FileName = fileName,
 			FileSizeBytes = bytes.LongLength,
-			DetectedEncoding = encoding.WebName.ToUpperInvariant(),
+			DetectedEncoding = encoding?.WebName.ToUpperInvariant(),
 			DetectedNewline = newline,
 			DetectedDelimiter = delimiter,
 			RowCount = rowCount == 0 ? null : rowCount,
@@ -535,6 +500,75 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 			Issues = issues.OrderBy(i => i.Severity).ThenBy(i => i.RowNumber).ToList()
 		};
 	}
+
+	#region Error Checker Methods
+
+	/// <summary>
+	/// Structural validation: unclosed quoted field at EOF
+	/// </summary>
+	private (bool flowControl, CsvAnalysisResult value) DetectUnclosedQuote(
+		string fileName
+		, byte[] bytes
+		, Encoding encoding
+		, string newline
+		, string text
+		, char delimiter
+		, List<CsvIssue> issues
+	)
+	{
+		var unclosed = GetUnclosedQuoteStart(text, delimiter);
+		if (unclosed.HasValue)
+		{
+			string? columnName = null;
+
+			var headers = TryGetHeadersWithCsvHelper(text, delimiter);
+			if (headers is not null)
+			{
+				var idx = unclosed.Value.FieldIndex - 1;
+				if (idx >= 0 && idx < headers.Length)
+				{
+					var name = headers[idx]?.Trim();
+					if (!string.IsNullOrWhiteSpace(name))
+						columnName = name;
+				}
+			}
+
+			issues.Add(new CsvIssue
+			{
+				IssueType = CsvIssueType.UNCLOSED_QUOTE,
+				Severity = CsvIssueSeverity.Error,
+				Message = "File ends with an unclosed quoted field. This CSV is malformed and may not import correctly.",
+				RowNumber = unclosed.Value.Row,
+				ColumnName = columnName
+			});
+
+			// Stop here: further parsing may be misleading for malformed CSV.
+			var tokenEarly = Guid.NewGuid().ToString("N");
+			return (flowControl: false, value: new CsvAnalysisResult
+			{
+				Token = tokenEarly,
+				FileName = fileName,
+				FileSizeBytes = bytes.LongLength,
+				DetectedEncoding = encoding.WebName.ToUpperInvariant(),
+				DetectedNewline = newline,
+				DetectedDelimiter = delimiter,
+				RowCount = null,       // unknown / unreliable
+				ColumnCount = null,    // unknown / unreliable
+				Issues = issues
+			});
+		}
+
+		return (flowControl: true, value: new CsvAnalysisResult
+		{
+			Token = string.Empty,
+			FileName = string.Empty,
+			FileSizeBytes = 0,
+		});
+	}
+
+	#endregion Error Checker Methods
+
+	#region Helper Methods
 
 	private Encoding DetectEncoding(byte[] bytes, out bool hadBom)
 	{
@@ -828,4 +862,7 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 		// If it looks like a date pattern but has impossible values, it's invalid
 		return hasImpossibleValue;
 	}
+
+	#endregion Helper Methods
+
 }
