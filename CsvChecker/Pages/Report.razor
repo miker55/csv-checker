@@ -179,9 +179,15 @@
 							</thead>
 
 							<tbody class="divide-y divide-slate-200">
+								@{
+									int rowIndex = 0;
+								}
 								@foreach (var i in FilteredIssues.OrderByDescending(x => x.Severity))
 								{
-									<tr class="hover:bg-slate-50/70">
+									<tr class="@(rowIndex % 2 == 0 ? "bg-gray-50" : "bg-green-50") hover:bg-gray-200">
+									@{
+										rowIndex++;
+									}
 										<td class="px-6 py-4 align-top">
 											<span class="@SeverityChipClass(i.Severity)">
 												@i.Severity
