@@ -6,9 +6,10 @@
         public const string AnalysisCompleted = "analysis_completed";
         public const string AnalysisFailed = "analysis_failed";
         public const string Download = "download";
-        public const string FileTooLarge = "file_too_large";
+		public const string EmailFailed = "email_failed";
+		public const string FileTooLarge = "file_too_large";
         public const string GAFailure = "ga_failure";
 		public const string NoFileSelected = "no_file_selected";
         public const string WrongFileType = "wrong_file_type";
-    }
+	}
 }

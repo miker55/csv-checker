@@ -7,6 +7,13 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Load email configuration
+builder.Configuration.AddJsonFile(
+    "appsettings.Email.json"
+    , optional: false
+    , reloadOnChange: true
+);
+
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 
@@ -19,6 +26,7 @@ builder.Services.AddDbContextFactory<TelemetryDbContext>(opt =>
 builder.Services.AddSingleton<IReportStore, ReportStore>();
 builder.Services.AddSingleton<ITelemetryService, TelemetryService>();
 builder.Services.AddSingleton<ICsvAnalyzer, CsvAnalyzer>();
+builder.Services.AddSingleton<IEmailHelper, EmailHelper>();
 
 var app = builder.Build();
 

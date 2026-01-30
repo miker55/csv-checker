@@ -260,3 +260,6 @@ telemetry.sqlite
 /.vs/CopilotSnapshots
 /.vs/CsvChecker.slnx
 /CsvChecker/Migrations
+
+# Email configuration (contains sensitive credentials)
+CsvChecker/appsettings.Email.json

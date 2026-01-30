@@ -42,10 +42,15 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 	];
 
 	private readonly ITelemetryService _telemetry;
+	private readonly IEmailHelper _emailHelper;
 
-	public CsvAnalyzer(ITelemetryService telemetry)
+	public CsvAnalyzer(
+		ITelemetryService telemetry
+		, IEmailHelper emailHelper
+	)
 	{
 		_telemetry = telemetry;
+		_emailHelper = emailHelper;
 	}
 
 	public async Task<CsvAnalysisResult> AnalyzeAsync(
@@ -487,6 +492,38 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 
 		var token = Guid.NewGuid().ToString("N");
 
+		// Build email body with analysis summary
+		var errorCount = issues.Count(i => i.Severity == CsvIssueSeverity.Error);
+		var warningCount = issues.Count(i => i.Severity == CsvIssueSeverity.Warning);
+		var infoCount = issues.Count(i => i.Severity == CsvIssueSeverity.Info);
+
+		var emailBody = $@"CSV Analysis Complete
+
+File Name: {fileName}
+File Size: {FormatBytes(bytes.LongLength)}
+Row Count: {(rowCount == 0 ? "Unknown" : rowCount.ToString("N0"))}
+Column Count: {(columnCount?.ToString("N0") ?? "Unknown")}
+
+Issues Summary:
+  Errors: {errorCount}
+  Warnings: {warningCount}
+  Info: {infoCount}
+  Total: {issues.Count}";
+
+		try
+		{
+			await _emailHelper.SendAsync("Analysis Completed", emailBody, ct: ct);
+		}
+		catch (Exception ex)
+		{
+			// Log the error but don't let it crash anything
+			await _telemetry.TryTrackAsync(
+				eventType: TelemetryEventType.EmailFailed
+				, message: ex.Message
+				, ct: CancellationToken.None
+			);
+		}
+
 		return new CsvAnalysisResult
 		{
 			Token = token,
@@ -861,6 +898,21 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 
 		// If it looks like a date pattern but has impossible values, it's invalid
 		return hasImpossibleValue;
+	}
+
+	private static string FormatBytes(long bytes)
+	{
+		var units = new[] { "B", "KB", "MB", "GB" };
+		double size = bytes;
+		int unit = 0;
+
+		while (size >= 1024 && unit < units.Length - 1)
+		{
+			size /= 1024;
+			unit++;
+		}
+
+		return unit == 0 ? $"{bytes} {units[unit]}" : $"{size:0.#} {units[unit]}";
 	}
 
 	#endregion Helper Methods
