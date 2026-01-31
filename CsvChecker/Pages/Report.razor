@@ -1,4 +1,4 @@
-Ôªø@page "/report/{Token}"
+@page "/report/{Token}"
 @using System
 @using CsvChecker.Library.Models
 @using CvsChecker.Library.Helpers
@@ -6,7 +6,7 @@
 @inject IReportStore Store
 @inject NavigationManager Nav
 
-<div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+<PageContainer MaxWidth="wide" Spacing="compact">
 	@if (_result is null)
 	{
 		<div class="mx-auto max-w-2xl text-center">
@@ -23,10 +23,9 @@
 			</p>
 
 			<div class="mt-8 flex justify-center gap-3">
-				<a href="/"
-				   class="inline-flex items-center justify-center rounded-xl bg-teal-600 px-5 py-3 font-semibold text-white shadow-lg shadow-teal-600/20 transition-all hover:bg-teal-700 active:scale-95">
+				<LinkButton Href="/" Variant="primary">
 					Upload another CSV
-				</a>
+				</LinkButton>
 			</div>
 		</div>
 	}
@@ -35,9 +34,9 @@
 		<!-- Header -->
 		<div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
 			<div>
-				<div class="inline-flex items-center rounded-full border border-teal-100 bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
+				<Pill>
 					Analysis complete
-				</div>
+				</Pill>
 
 				<h1 class="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
 					CSV Report
@@ -45,91 +44,72 @@
 
 				<p class="mt-2 text-slate-600">
 					<span class="font-semibold text-slate-800">@_result.FileName</span>
-					<span class="text-slate-400">‚Ä¢</span>
+					<span class="text-slate-400">ï</span>
 					<span>@FormatBytes(_result.FileSizeBytes)</span>
 				</p>
 			</div>
 
-		<div class="flex flex-col gap-3 sm:flex-row">
-			@if (_result.Issues.Count > 0)
-			{
-				<a href="@($"/download/errors/{_result.Token}")"
-				   class="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 px-5 py-3 font-semibold text-white shadow-lg shadow-teal-600/20 transition-all hover:bg-teal-700 active:scale-95">
-					<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-							  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-					</svg>
-					Download errors.csv
-				</a>
-			}
+			<div class="flex flex-col gap-3 sm:flex-row">
+				@if (_result.Issues.Count > 0)
+				{
+					<LinkButton Href="@($"/download/errors/{_result.Token}")" Variant="secondary">
+						<IconContent>
+							<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+									  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+							</svg>
+						</IconContent>
+						<ChildContent>
+							Download errors.csv
+						</ChildContent>
+					</LinkButton>
+				}
 
-			<a href="/"
-			   class="@(_result.Issues.Count == 0
-				? "inline-flex items-center justify-center px-5 py-3 rounded-xl bg-teal-600 text-white font-semibold shadow-lg shadow-teal-600/20 hover:bg-teal-700 transition-all active:scale-95"
-				: "inline-flex items-center justify-center px-5 py-3 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold hover:border-teal-300 hover:text-teal-700 transition-all active:scale-95")">
-			Analyze another CSV
-		</a>
-	</div>
-</div>
+				<LinkButton Href="/" Variant="@(_result.Issues.Count == 0 ? "secondary" : "default")">
+					Analyze another CSV
+				</LinkButton>
+			</div>
+		</div>
 
-	@if (expiresUtc is not null)
+		@if (expiresUtc is not null)
 		{
 			<p class="mt-2 flex items-center gap-1 text-sm text-gray-500">
-				<span>‚è±</span>
+				<span>?</span>
 				Report expires at 6:20 PM (1 hour after upload).
 			</p>
 		}
 
 		<!-- Summary cards -->
 		<div class="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-			<div class="rounded-2xl border border-slate-200/60 bg-slate-50 p-5">
-				<div class="text-xs font-semibold text-slate-500">Encoding</div>
-				<div class="mt-1 text-lg font-bold text-slate-900">@(_result.DetectedEncoding ?? "Unknown")</div>
-			</div>
-
-			<div class="rounded-2xl border border-slate-200/60 bg-slate-50 p-5">
-				<div class="text-xs font-semibold text-slate-500">Delimiter</div>
-				<div class="mt-1 text-lg font-bold text-slate-900">@(_result.DetectedDelimiter?.ToString() ?? "Unknown")</div>
-			</div>
-
-			<div class="rounded-2xl border border-slate-200/60 bg-slate-50 p-5">
-				<div class="text-xs font-semibold text-slate-500">Rows (incl. header)</div>
-				<div class="mt-1 text-lg font-bold text-slate-900">@(_result.RowCount?.ToString("N0") ?? "Unknown")</div>
-			</div>
-
-			<div class="rounded-2xl border border-slate-200/60 bg-slate-50 p-5">
-				<div class="text-xs font-semibold text-slate-500">Columns</div>
-				<div class="mt-1 text-lg font-bold text-slate-900">@(_result.ColumnCount?.ToString("N0") ?? "Unknown")</div>
-			</div>
+			<StatCard Label="Encoding" Value="@(_result.DetectedEncoding ?? "Unknown")" />
+			<StatCard Label="Delimiter" Value="@(_result.DetectedDelimiter?.ToString() ?? "Unknown")" />
+			<StatCard Label="Rows (incl. header)" Value="@(_result.RowCount?.ToString("N0") ?? "Unknown")" />
+			<StatCard Label="Columns" Value="@(_result.ColumnCount?.ToString("N0") ?? "Unknown")" />
 		</div>
 
 		<div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-			<div class="rounded-2xl border border-slate-200 bg-white p-5">
-				<div class="text-xs font-semibold text-slate-500">Newlines</div>
-				<div class="mt-1 font-semibold text-slate-800">@(_result.DetectedNewline ?? "Unknown")</div>
-			</div>
-
-			<div class="rounded-2xl border border-slate-200 bg-white p-5">
-				<div class="text-xs font-semibold text-slate-500">Issues</div>
-				<div class="mt-1 flex items-center gap-2">
+			<StatCard Label="Newlines" Value="@(_result.DetectedNewline ?? "Unknown")" Variant="white" />
+			
+			<StatCard Label="Issues" Variant="white">
+				<div class="flex items-center gap-2">
 					<span class="text-xl font-extrabold text-slate-900">@_result.Issues.Count.ToString("N0")</span>
 					<span class="text-sm text-slate-600">@(_result.Issues.Count == 1 ? "issue found" : "issues found")</span>
 				</div>
-			</div>
+			</StatCard>
 		</div>
 
 		<!-- Filter pills -->
 		<div class="mt-4 flex flex-wrap gap-2">
-		@foreach (CsvIssueSeverity s in Enum.GetValues(typeof(CsvIssueSeverity)))
+			@foreach (CsvIssueSeverity s in Enum.GetValues(typeof(CsvIssueSeverity)))
 			{
 				<button type="button"
 						class="rounded-full border px-3 py-1 text-xs font-semibold transition-colors @(s == _filter
-																														   	? "bg-slate-900 text-white border-slate-900"
-																															: "bg-white text-slate-700 border-slate-200 hover:border-teal-300")"
-				@onclick="@(() => ToggleFilter(s))">
-			@s
-		</button>
-				}
+							? "bg-slate-900 text-white border-slate-900"
+							: "bg-white text-slate-700 border-slate-200 hover:border-teal-300")"
+						@onclick="@(() => ToggleFilter(s))">
+					@s
+				</button>
+			}
 
 			@if (_filter is not null)
 			{
@@ -168,15 +148,15 @@
 				<div class="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
 					<div class="overflow-x-auto">
 						<table class="min-w-full text-left">
-							<thead class="border-b border-slate-200 bg-slate-50">
-								<tr>
-									<th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600">Severity</th>
-									<th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600">Code</th>
-									<th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600">Message</th>
-									<th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600">Row</th>
-									<th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600">Column</th>
-								</tr>
-							</thead>
+						<thead class="border-b border-slate-200 bg-slate-50">
+							<tr>
+								<TableHeader Text="Severity" />
+								<TableHeader Text="Code" />
+								<TableHeader Text="Message" />
+								<TableHeader Text="Row" />
+								<TableHeader Text="Column" />
+							</tr>
+						</thead>
 
 							<tbody class="divide-y divide-slate-200">
 								@{
@@ -217,11 +197,11 @@
 										</td>
 
 										<td class="px-6 py-4 align-top text-slate-700">
-											@(i.RowNumber is not null ? i.RowNumber.ToString() : "‚Äî")
+											@(i.RowNumber is not null ? i.RowNumber.ToString() : "ó")
 										</td>
 
 										<td class="px-6 py-4 align-top text-slate-700">
-											@(string.IsNullOrWhiteSpace(i.ColumnName) ? "‚Äî" : i.ColumnName)
+											@(string.IsNullOrWhiteSpace(i.ColumnName) ? "ó" : i.ColumnName)
 										</td>
 									</tr>
 								}
@@ -335,32 +315,32 @@
 		</div>
 	}
 
-</div>
+</PageContainer>
 
 @code {
-[Parameter] public string Token { get; set; } = default!;
-private CsvAnalysisResult? _result;
+	[Parameter] public string Token { get; set; } = default!;
+	private CsvAnalysisResult? _result;
 
-private CsvIssueSeverity? _filter;
-private DateTimeOffset? expiresUtc = null;
+	private CsvIssueSeverity? _filter;
+	private DateTimeOffset? expiresUtc = null;
 
-private int _currentPage = 1;
-private int _pageSize = 10;
+	private int _currentPage = 1;
+	private int _pageSize = 10;
 
-private IEnumerable<CsvIssue> FilteredIssues =>
-_result is null
-? Array.Empty<CsvIssue>()
-: (_filter is null ? _result.Issues : _result.Issues.Where(i => i.Severity == _filter));
+	private IEnumerable<CsvIssue> FilteredIssues =>
+		_result is null
+			? Array.Empty<CsvIssue>()
+			: (_filter is null ? _result.Issues : _result.Issues.Where(i => i.Severity == _filter));
 
-private IEnumerable<CsvIssue> PaginatedIssues =>
-FilteredIssues
-.OrderByDescending(x => x.Severity)
-.Skip((_currentPage - 1) * _pageSize)
-.Take(_pageSize);
+	private IEnumerable<CsvIssue> PaginatedIssues =>
+		FilteredIssues
+			.OrderByDescending(x => x.Severity)
+			.Skip((_currentPage - 1) * _pageSize)
+			.Take(_pageSize);
 
-private int TotalPages => FilteredIssues.Any() 
-? (int)Math.Ceiling(FilteredIssues.Count() / (double)_pageSize)
-: 1;
+	private int TotalPages => FilteredIssues.Any() 
+		? (int)Math.Ceiling(FilteredIssues.Count() / (double)_pageSize)
+		: 1;
 
 	protected override void OnParametersSet()
 	{
@@ -373,21 +353,18 @@ private int TotalPages => FilteredIssues.Any()
 		{
 			_result = null;
 		}
-
-		// If the current filter no longer exists in the filtered set, leave it as-is;
-		// user can Clear.
 	}
 
 	private void ToggleFilter(CsvIssueSeverity s)
 	{
 		_filter = _filter == s ? null : s;
-		_currentPage = 1; // Reset to first page when filter changes
+		_currentPage = 1;
 	}
 
 	private void ClearFilter()
 	{
 		_filter = null;
-		_currentPage = 1; // Reset to first page when filter is cleared
+		_currentPage = 1;
 	}
 
 	private void GoToPage(int page)
@@ -401,12 +378,11 @@ private int TotalPages => FilteredIssues.Any()
 	private void ChangePageSize(int newPageSize)
 	{
 		_pageSize = newPageSize;
-		_currentPage = 1; // Reset to first page when page size changes
+		_currentPage = 1;
 	}
 
 	private static string FormatBytes(long bytes)
 	{
-		// Dependency-free formatter
 		var units = new[] { "B", "KB", "MB", "GB" };
 		double size = bytes;
 		int unit = 0;
@@ -426,7 +402,6 @@ private int TotalPages => FilteredIssues.Any()
 		
 		if (TotalPages <= 7)
 		{
-			// Show all pages if 7 or fewer
 			for (int i = 1; i <= TotalPages; i++)
 			{
 				pages.Add(i);
@@ -434,23 +409,20 @@ private int TotalPages => FilteredIssues.Any()
 		}
 		else
 		{
-			// Always show first page
 			pages.Add(1);
 			
 			if (_currentPage <= 4)
 			{
-				// Near start: 1, 2, 3, 4, 5, ..., last
 				for (int i = 2; i <= 5; i++)
 				{
 					pages.Add(i);
 				}
-				pages.Add(-1); // ellipsis
+				pages.Add(-1);
 				pages.Add(TotalPages);
 			}
 			else if (_currentPage >= TotalPages - 3)
 			{
-				// Near end: 1, ..., last-4, last-3, last-2, last-1, last
-				pages.Add(-1); // ellipsis
+				pages.Add(-1);
 				for (int i = TotalPages - 4; i <= TotalPages; i++)
 				{
 					pages.Add(i);
@@ -458,13 +430,12 @@ private int TotalPages => FilteredIssues.Any()
 			}
 			else
 			{
-				// In middle: 1, ..., current-1, current, current+1, ..., last
-				pages.Add(-1); // ellipsis
+				pages.Add(-1);
 				for (int i = _currentPage - 1; i <= _currentPage + 1; i++)
 				{
 					pages.Add(i);
 				}
-				pages.Add(-1); // ellipsis
+				pages.Add(-1);
 				pages.Add(TotalPages);
 			}
 		}

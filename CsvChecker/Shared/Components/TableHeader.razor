@@ -1,0 +1,8 @@
+<th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600">
+	@Text
+</th>
+
+@code {
+	[Parameter, EditorRequired]
+	public string Text { get; set; } = default!;
+}

@@ -1,0 +1,32 @@
+<div class="rounded-2xl border @BorderColorClass @BackgroundClass p-3">
+	<div class="text-xs font-semibold text-slate-500">@Label</div>
+	<div class="mt-1 @ValueClass">
+		@if (ChildContent != null)
+		{
+			@ChildContent
+		}
+		else
+		{
+			@Value
+		}
+	</div>
+</div>
+
+@code {
+	[Parameter, EditorRequired]
+	public string Label { get; set; } = default!;
+
+	[Parameter]
+	public string? Value { get; set; }
+
+	[Parameter]
+	public RenderFragment? ChildContent { get; set; }
+
+	[Parameter]
+	public string Variant { get; set; } = "default"; // "default" or "white"
+
+	private string BorderColorClass => Variant == "white" ? "border-slate-200" : "border-slate-200/60";
+	private string BackgroundClass => Variant == "white" ? "bg-white" : "bg-slate-50";
+	private string ValueClass => ChildContent != null ? "" : "text-lg font-bold text-slate-900";
+}
+

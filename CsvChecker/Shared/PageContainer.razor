@@ -1,0 +1,81 @@
+@namespace CsvChecker.Shared
+
+<div class="@ContainerClass">
+    @ChildContent
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Defines the maximum width of the container.
+    /// Options: "narrow" (3xl), "default" (4xl), "wide" (7xl)
+    /// </summary>
+    [Parameter]
+    public string MaxWidth { get; set; } = "default";
+
+    /// <summary>
+    /// Defines the vertical padding.
+    /// Options: "compact" (py-12), "normal" (py-16), "spacious" (py-24)
+    /// </summary>
+    [Parameter]
+    public string Spacing { get; set; } = "normal";
+
+    /// <summary>
+    /// Centers content using flexbox (for hero/error pages).
+    /// </summary>
+    [Parameter]
+    public bool Centered { get; set; } = false;
+
+    /// <summary>
+    /// Additional CSS classes to append.
+    /// </summary>
+    [Parameter]
+    public string? AdditionalClasses { get; set; }
+
+    private string ContainerClass
+    {
+        get
+        {
+            var classes = new List<string>
+            {
+                "mx-auto",
+                MaxWidthClass,
+                "px-4",
+                SpacingClass,
+                "sm:px-6",
+                "lg:px-8"
+            };
+
+            if (Centered)
+            {
+                classes.Add("flex");
+                classes.Add("flex-col");
+                classes.Add("items-center");
+                classes.Add("text-center");
+            }
+
+            if (!string.IsNullOrWhiteSpace(AdditionalClasses))
+            {
+                classes.Add(AdditionalClasses);
+            }
+
+            return string.Join(" ", classes);
+        }
+    }
+
+    private string MaxWidthClass => MaxWidth switch
+    {
+        "narrow" => "max-w-3xl",
+        "wide" => "max-w-7xl",
+        _ => "max-w-4xl"
+    };
+
+    private string SpacingClass => Spacing switch
+    {
+        "compact" => "py-8",
+        "spacious" => "py-24",
+        _ => "py-12"
+    };
+}

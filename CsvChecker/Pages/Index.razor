@@ -12,9 +12,9 @@
 
 <!-- HERO -->
 <div class="flex flex-col items-center px-4 py-20 text-center sm:pb-1 sm:pt-16">
-    <div class="mb-6 inline-flex items-center rounded-full border border-teal-100 bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
+    <Pill>
         Secure &amp; Private
-    </div>
+    </Pill>
 
     <h1 class="max-w-5xl text-4xl font-extrabold leading-snug tracking-tight text-slate-900 md:text-6xl md:leading-tight">
         Professional CSV diagnostics <br />
@@ -80,53 +80,41 @@
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
 
-            <div class="group rounded-2xl border border-slate-200/60 bg-slate-50 p-6 transition-colors hover:border-teal-200">
-                <div class="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-teal-100 text-teal-600 transition-transform group-hover:scale-110">
+            <FeatureCard Title="Structural Checks"
+                         Description="Verifies column counts, empty rows, and malformed quotes across your entire dataset.">
+                <IconContent>
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                     </svg>
-                </div>
-                <h3 class="mb-3 text-xl font-bold text-slate-900">Structural Checks</h3>
-                <p class="text-sm leading-relaxed text-slate-600">
-                    Verifies column counts, empty rows, and malformed quotes across your entire dataset.
-                </p>
-            </div>
+                </IconContent>
+            </FeatureCard>
 
-            <div class="group rounded-2xl border border-slate-200/60 bg-slate-50 p-6 transition-colors hover:border-teal-200">
-                <div class="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-teal-100 text-teal-600 transition-transform group-hover:scale-110">
+            <FeatureCard Title="Encoding &amp; Delimiter"
+                         Description="Automatically detects encoding (UTF-8, Latin-1) and identifies the active delimiter.">
+                <IconContent>
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
-                </div>
-                <h3 class="mb-3 text-xl font-bold text-slate-900">Encoding &amp; Delimiter</h3>
-                <p class="text-sm leading-relaxed text-slate-600">
-                    Automatically detects encoding (UTF-8, Latin-1) and identifies the active delimiter.
-                </p>
-            </div>
+                </IconContent>
+            </FeatureCard>
 
-            <div class="group rounded-2xl border border-slate-200/60 bg-slate-50 p-6 transition-colors hover:border-teal-200">
-                <div class="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-teal-100 text-teal-600 transition-transform group-hover:scale-110">
+            <FeatureCard Title="Error Reporting"
+                         Description="Get precise row and column location for every error found, categorized by severity.">
+                <IconContent>
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
-                </div>
-                <h3 class="mb-3 text-xl font-bold text-slate-900">Error Reporting</h3>
-                <p class="text-sm leading-relaxed text-slate-600">
-                    Get precise row and column location for every error found, categorized by severity.
-                </p>
-            </div>
+                </IconContent>
+            </FeatureCard>
 
-            <div class="group rounded-2xl border border-slate-200/60 bg-slate-50 p-6 transition-colors hover:border-teal-200">
-                <div class="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-teal-100 text-teal-600 transition-transform group-hover:scale-110">
+            <FeatureCard Title="Diagnostic Export"
+                         Description="Download a detailed summary of all identified issues for easy troubleshooting.">
+                <IconContent>
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
-                </div>
-                <h3 class="mb-3 text-xl font-bold text-slate-900">Diagnostic Export</h3>
-                <p class="text-sm leading-relaxed text-slate-600">
-                    Download a detailed summary of all identified issues for easy troubleshooting.
-                </p>
-            </div>
+                </IconContent>
+            </FeatureCard>
 
         </div>
     </div>

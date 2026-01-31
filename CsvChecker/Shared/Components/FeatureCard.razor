@@ -1,0 +1,20 @@
+<div class="group rounded-2xl border border-slate-200/60 bg-slate-50 p-6 transition-colors hover:border-teal-200">
+    <div class="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-teal-100 text-teal-600 transition-transform group-hover:scale-110">
+        @IconContent
+    </div>
+    <h3 class="mb-3 text-xl font-bold text-slate-900">@Title</h3>
+    <p class="text-sm leading-relaxed text-slate-600">
+        @Description
+    </p>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public RenderFragment IconContent { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public string Description { get; set; } = default!;
+}

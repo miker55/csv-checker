@@ -1,0 +1,18 @@
+<button type="button"
+        class="inline-flex items-center justify-center rounded-lg p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-400 md:hidden"
+        aria-label="@AriaLabel"
+        aria-expanded="@IsOpen"
+        @onclick="OnClick">
+    <MenuIcon IsOpen="@IsOpen" />
+</button>
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public string AriaLabel { get; set; } = "Open menu";
+
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+}

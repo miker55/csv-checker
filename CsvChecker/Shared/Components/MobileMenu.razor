@@ -1,0 +1,36 @@
+@if (IsOpen)
+{
+    <div class="border-t border-slate-200 bg-white/90 backdrop-blur-md md:hidden">
+        <div class="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
+            <nav class="flex flex-col gap-1" aria-label="Mobile Primary">
+                <NavLink href="/"
+                         class="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-teal-700"
+                         Match="NavLinkMatch.All"
+                         ActiveClass="bg-teal-50 text-teal-800"
+                         @onclick="OnNavClick">
+                    Upload
+                </NavLink>
+                <NavLink href="/privacy"
+                         class="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-teal-700"
+                         ActiveClass="bg-teal-50 text-teal-800"
+                         @onclick="OnNavClick">
+                    Privacy
+                </NavLink>
+                <NavLink href="/contact"
+                         class="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-teal-700"
+                         ActiveClass="bg-teal-50 text-teal-800"
+                         @onclick="OnNavClick">
+                    Contact
+                </NavLink>
+            </nav>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public EventCallback OnNavClick { get; set; }
+}
