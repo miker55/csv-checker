@@ -21,32 +21,39 @@ public sealed class EmailHelper : IEmailHelper
 		, CancellationToken ct = default
 	)
 	{
-		var smtpHost = _configuration["Email:SmtpHost"] ?? "smtp.gmail.com";
-		var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "587");
-		var toEmail = _configuration["Email:ToEmail"]
-			?? throw new InvalidOperationException("Email:ToEmail is not configured.");
-		var fromEmail = _configuration["Email:FromEmail"]
-			?? throw new InvalidOperationException("Email:FromEmail is not configured.");
-		var fromPassword = _configuration["Email:FromPassword"]
-			?? throw new InvalidOperationException("Email:FromPassword is not configured.");
-		var fromName = _configuration["Email:FromName"] ?? fromEmail;
-
-		using var message = new MailMessage
+		try
 		{
-			From = new MailAddress(fromEmail, fromName),
-			Subject = subject,
-			Body = body,
-			IsBodyHtml = isHtml
-		};
+			var smtpHost = _configuration["Email:SmtpHost"] ?? "smtp.gmail.com";
+			var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "587");
+			var toEmail = _configuration["Email:ToEmail"]
+				?? throw new InvalidOperationException("Email:ToEmail is not configured.");
+			var fromEmail = _configuration["Email:FromEmail"]
+				?? throw new InvalidOperationException("Email:FromEmail is not configured.");
+			var fromPassword = _configuration["Email:FromPassword"]
+				?? throw new InvalidOperationException("Email:FromPassword is not configured.");
+			var fromName = _configuration["Email:FromName"] ?? fromEmail;
 
-		message.To.Add(toEmail);
+			using var message = new MailMessage
+			{
+				From = new MailAddress(fromEmail, fromName),
+				Subject = subject,
+				Body = body,
+				IsBodyHtml = isHtml
+			};
 
-		using var smtpClient = new SmtpClient(smtpHost, smtpPort)
+			message.To.Add(toEmail);
+
+			using var smtpClient = new SmtpClient(smtpHost, smtpPort)
+			{
+				EnableSsl = true,
+				Credentials = new NetworkCredential(fromEmail, fromPassword)
+			};
+
+			await smtpClient.SendMailAsync(message, ct);
+		}
+		catch
 		{
-			EnableSsl = true,
-			Credentials = new NetworkCredential(fromEmail, fromPassword)
-		};
-
-		await smtpClient.SendMailAsync(message, ct);
+			// TODO: Log email failure if needed
+		}
 	}
 }

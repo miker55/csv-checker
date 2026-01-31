@@ -53,252 +53,320 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 		_emailHelper = emailHelper;
 	}
 
-	public async Task<CsvAnalysisResult> AnalyzeAsync(
+	public async Task<CsvAnalysisResult?> AnalyzeAsync(
 		string fileName
 		, byte[] bytes
 		, CancellationToken ct)
 	{
-		var issues = new List<CsvIssue>();
-
-		Encoding? encoding = null;
-		string? newline = null;
-		char? delimiter = null;
-
-		// Parse CSV using CsvHelper
-		// We'll count row/column consistency and detect ragged rows.
-		int? columnCount = null;
-		int rowCount = 0;
-
-		var trailingDelimiterHeader = false;
-
-		string[] headerRecord = Array.Empty<string>();
-		bool[] seenQuoted = Array.Empty<bool>();
-		bool[] seenUnquoted = Array.Empty<bool>();
-		int[] firstQuotedRow = Array.Empty<int>();
-		int[] firstUnquotedRow = Array.Empty<int>();
-
-		// Type tracking arrays (declared here for broader scope)
-		int[] emptyCounts = Array.Empty<int>();
-		int[] numberCounts = Array.Empty<int>();
-		int[] dateCounts = Array.Empty<int>();
-		int[] textCounts = Array.Empty<int>();
-		int[] firstNonEmptyRow = Array.Empty<int>();
-		int[] firstTextRow = Array.Empty<int>();
-		int[] firstNumberRow = Array.Empty<int>();
-		int[] firstDateRow = Array.Empty<int>();
-		string?[] exampleText = Array.Empty<string?>();
-		string?[] exampleNumber = Array.Empty<string?>();
-		string?[] exampleDate = Array.Empty<string?>();
-
 		try
 		{
-			// (simple v1): UTF-8 with BOM vs without, fallback to UTF-8
-			encoding = DetectEncoding(bytes, out var hadBom);
-			newline = DetectNewlines(bytes);
+			var issues = new List<CsvIssue>();
 
-			var text = encoding.GetString(bytes);
+			Encoding? encoding = null;
+			string? newline = null;
+			char? delimiter = null;
 
-			// (simple heuristic)
-			delimiter = DetectDelimiter(text);
+			// Parse CSV using CsvHelper
+			// We'll count row/column consistency and detect ragged rows.
+			int? columnCount = null;
+			int rowCount = 0;
 
-			if (hadBom)
+			var trailingDelimiterHeader = false;
+
+			string[] headerRecord = Array.Empty<string>();
+			bool[] seenQuoted = Array.Empty<bool>();
+			bool[] seenUnquoted = Array.Empty<bool>();
+			int[] firstQuotedRow = Array.Empty<int>();
+			int[] firstUnquotedRow = Array.Empty<int>();
+
+			// Type tracking arrays (declared here for broader scope)
+			int[] emptyCounts = Array.Empty<int>();
+			int[] numberCounts = Array.Empty<int>();
+			int[] dateCounts = Array.Empty<int>();
+			int[] textCounts = Array.Empty<int>();
+			int[] firstNonEmptyRow = Array.Empty<int>();
+			int[] firstTextRow = Array.Empty<int>();
+			int[] firstNumberRow = Array.Empty<int>();
+			int[] firstDateRow = Array.Empty<int>();
+			string?[] exampleText = Array.Empty<string?>();
+			string?[] exampleNumber = Array.Empty<string?>();
+			string?[] exampleDate = Array.Empty<string?>();
+
+			try
 			{
-				issues.Add(new CsvIssue
-				{
-					IssueType = CsvIssueType.UTF8_BOM,
-					Severity = CsvIssueSeverity.Info,
-					Message = "File appears to contain a UTF-8 BOM. Some importers may mis-handle BOM in headers."
-				});
-			}
+				// (simple v1): UTF-8 with BOM vs without, fallback to UTF-8
+				encoding = DetectEncoding(bytes, out var hadBom);
+				newline = DetectNewlines(bytes);
 
-			if (newline == "Mixed")
-			{
-				issues.Add(new CsvIssue
-				{
-					IssueType = CsvIssueType.MIXED_LINE_ENDINGS,
-					Severity = CsvIssueSeverity.Warning,
-					Message = "File contains mixed line endings (LF/CRLF). This can confuse some parsers."
-				});
-			}
+				var text = encoding.GetString(bytes);
 
-			// look for an unclosed quote first
-			(bool flowControl, CsvAnalysisResult value) = DetectUnclosedQuote(fileName, bytes, encoding, newline, text, delimiter.Value, issues);
-			if (!flowControl) return value;
+				// (simple heuristic)
+				delimiter = DetectDelimiter(text);
 
-			var config = new CsvConfiguration(CultureInfo.InvariantCulture)
-			{
-				HasHeaderRecord = true,
-				Delimiter = delimiter.Value.ToString(),
-				BadDataFound = null, // we'll handle issues ourselves later
-				MissingFieldFound = null,
-				DetectDelimiter = false
-			};
-
-			using var reader = new StringReader(text);
-			using var csv = new CsvReader(reader, config);
-
-			// Read header
-			if (await csv.ReadAsync() && csv.ReadHeader())
-			{
-				rowCount++;
-				var header = csv.HeaderRecord ?? Array.Empty<string>();
-				headerRecord = header;
-				columnCount = header.Length;
-
-				// Initialize quoting trackers
-				seenQuoted = new bool[columnCount.Value];
-				seenUnquoted = new bool[columnCount.Value];
-				firstQuotedRow = Enumerable.Repeat(-1, columnCount.Value).ToArray();
-				firstUnquotedRow = Enumerable.Repeat(-1, columnCount.Value).ToArray();
-
-				// Initialize type tracking arrays
-				emptyCounts = new int[columnCount.Value];
-				numberCounts = new int[columnCount.Value];
-				dateCounts = new int[columnCount.Value];
-				textCounts = new int[columnCount.Value];
-
-				firstNonEmptyRow = Enumerable.Repeat(-1, columnCount.Value).ToArray();
-				firstTextRow = Enumerable.Repeat(-1, columnCount.Value).ToArray();
-				firstNumberRow = Enumerable.Repeat(-1, columnCount.Value).ToArray();
-				firstDateRow = Enumerable.Repeat(-1, columnCount.Value).ToArray();
-
-				exampleText = new string?[columnCount.Value];
-				exampleNumber = new string?[columnCount.Value];
-				exampleDate = new string?[columnCount.Value];
-
-				// Header checks
-				var dupes = header
-					.Where(h => !string.IsNullOrWhiteSpace(h))
-					.GroupBy(h => h.Trim(), StringComparer.OrdinalIgnoreCase)
-					.Where(g => g.Count() > 1)
-					.Select(g => g.Key)
-					.ToList();
-
-				foreach (var d in dupes)
+				if (hadBom)
 				{
 					issues.Add(new CsvIssue
 					{
-						IssueType = CsvIssueType.DUPLICATE_HEADER,
-						Severity = CsvIssueSeverity.Error,
-						Message = $"Duplicate header column name: '{d}'. Many importers require unique column names."
+						IssueType = CsvIssueType.UTF8_BOM,
+						Severity = CsvIssueSeverity.Info,
+						Message = "File appears to contain a UTF-8 BOM. Some importers may mis-handle BOM in headers."
 					});
 				}
 
-				// Empty header names and whitespace detection
-				for (var i = 0; i < header.Length; i++)
+				if (newline == "Mixed")
 				{
-					if (string.IsNullOrWhiteSpace(header[i]))
+					issues.Add(new CsvIssue
 					{
-						if (i == header.Length - 1)
+						IssueType = CsvIssueType.MIXED_LINE_ENDINGS,
+						Severity = CsvIssueSeverity.Warning,
+						Message = "File contains mixed line endings (LF/CRLF). This can confuse some parsers."
+					});
+				}
+
+				// look for an unclosed quote first
+				(bool flowControl, CsvAnalysisResult value) = DetectUnclosedQuote(fileName, bytes, encoding, newline, text, delimiter.Value, issues);
+				if (!flowControl) return value;
+
+				var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+				{
+					HasHeaderRecord = true,
+					Delimiter = delimiter.Value.ToString(),
+					BadDataFound = null, // we'll handle issues ourselves later
+					MissingFieldFound = null,
+					DetectDelimiter = false
+				};
+
+				using var reader = new StringReader(text);
+				using var csv = new CsvReader(reader, config);
+
+				// Read header
+				if (await csv.ReadAsync() && csv.ReadHeader())
+				{
+					rowCount++;
+					var header = csv.HeaderRecord ?? Array.Empty<string>();
+					headerRecord = header;
+					columnCount = header.Length;
+
+					// Initialize quoting trackers
+					seenQuoted = new bool[columnCount.Value];
+					seenUnquoted = new bool[columnCount.Value];
+					firstQuotedRow = Enumerable.Repeat(-1, columnCount.Value).ToArray();
+					firstUnquotedRow = Enumerable.Repeat(-1, columnCount.Value).ToArray();
+
+					// Initialize type tracking arrays
+					emptyCounts = new int[columnCount.Value];
+					numberCounts = new int[columnCount.Value];
+					dateCounts = new int[columnCount.Value];
+					textCounts = new int[columnCount.Value];
+
+					firstNonEmptyRow = Enumerable.Repeat(-1, columnCount.Value).ToArray();
+					firstTextRow = Enumerable.Repeat(-1, columnCount.Value).ToArray();
+					firstNumberRow = Enumerable.Repeat(-1, columnCount.Value).ToArray();
+					firstDateRow = Enumerable.Repeat(-1, columnCount.Value).ToArray();
+
+					exampleText = new string?[columnCount.Value];
+					exampleNumber = new string?[columnCount.Value];
+					exampleDate = new string?[columnCount.Value];
+
+					// Header checks
+					var dupes = header
+						.Where(h => !string.IsNullOrWhiteSpace(h))
+						.GroupBy(h => h.Trim(), StringComparer.OrdinalIgnoreCase)
+						.Where(g => g.Count() > 1)
+						.Select(g => g.Key)
+						.ToList();
+
+					foreach (var d in dupes)
+					{
+						issues.Add(new CsvIssue
 						{
-							// Trailing delimiter case
-							columnCount--;
-							issues.Add(new CsvIssue
+							IssueType = CsvIssueType.DUPLICATE_HEADER,
+							Severity = CsvIssueSeverity.Error,
+							Message = $"Duplicate header column name: '{d}'. Many importers require unique column names."
+						});
+					}
+
+					// Empty header names and whitespace detection
+					for (var i = 0; i < header.Length; i++)
+					{
+						if (string.IsNullOrWhiteSpace(header[i]))
+						{
+							if (i == header.Length - 1)
 							{
-								IssueType = CsvIssueType.TRAILING_DELIMITER_HEADER,
-								Severity = CsvIssueSeverity.Warning,
-								Message = "Header row appears to have a trailing delimiter, resulting in an empty final column.",
-							});
+								// Trailing delimiter case
+								columnCount--;
+								issues.Add(new CsvIssue
+								{
+									IssueType = CsvIssueType.TRAILING_DELIMITER_HEADER,
+									Severity = CsvIssueSeverity.Warning,
+									Message = "Header row appears to have a trailing delimiter, resulting in an empty final column.",
+								});
+							}
+							else
+							{
+								issues.Add(new CsvIssue
+								{
+									IssueType = CsvIssueType.HEADER_EMPTY,
+									Severity = CsvIssueSeverity.Warning,
+									Message = $"Header column {i + 1} is empty.",
+									RowNumber = 1
+								});
+							}
 						}
-						else
+						else if (!string.IsNullOrEmpty(header[i]) && header[i] != header[i].Trim())
 						{
+							// Header has leading or trailing whitespace
 							issues.Add(new CsvIssue
 							{
-								IssueType = CsvIssueType.HEADER_EMPTY,
+								IssueType = CsvIssueType.WHITESPACE_IN_HEADERS,
 								Severity = CsvIssueSeverity.Warning,
-								Message = $"Header column {i + 1} is empty.",
-								RowNumber = 1
+								Message = $"Header column '{header[i]}' contains leading/trailing whitespace that may cause duplicate or mismatched columns.",
+								RowNumber = 1,
+								ColumnName = header[i].Trim()
 							});
 						}
 					}
-					else if (!string.IsNullOrEmpty(header[i]) && header[i] != header[i].Trim())
+				}
+
+				// Read records
+				while (await csv.ReadAsync())
+				{
+					ct.ThrowIfCancellationRequested();
+					rowCount++;
+
+					// CsvHelper exposes current record fields via Parser.Record
+					var record = csv.Parser.Record ?? Array.Empty<string>();
+					var recordLength = trailingDelimiterHeader ? record.Length - 1 : record.Length;
+
+					// Track quoting patterns per column
+					if (columnCount is not null)
 					{
-						// Header has leading or trailing whitespace
+						var quotedFlags = GetQuotedFlagsFromRawRecord(csv.Parser.RawRecord, delimiter.Value);
+
+						// Only compare overlapping columns
+						int n = Math.Min(Math.Min(record.Length, quotedFlags.Length), columnCount.Value);
+
+						for (int c = 0; c < n; c++)
+						{
+							if (quotedFlags[c])
+							{
+								if (!seenQuoted[c])
+								{
+									seenQuoted[c] = true;
+									firstQuotedRow[c] = rowCount;
+								}
+							}
+							else
+							{
+								if (!seenUnquoted[c])
+								{
+									seenUnquoted[c] = true;
+									firstUnquotedRow[c] = rowCount;
+								}
+							}
+						}
+
+						// Track value types per column
+						for (int c = 0; c < n; c++)
+						{
+							var kind = ClassifyValue(record[c]);
+
+							if (kind != SimpleValueKind.Empty && firstNonEmptyRow[c] < 0)
+								firstNonEmptyRow[c] = rowCount;
+
+							switch (kind)
+							{
+								case SimpleValueKind.Empty:
+									emptyCounts[c]++;
+									break;
+
+								case SimpleValueKind.Number:
+									numberCounts[c]++;
+									if (firstNumberRow[c] < 0) firstNumberRow[c] = rowCount;
+									exampleNumber[c] ??= record[c];
+									break;
+
+								case SimpleValueKind.Date:
+									dateCounts[c]++;
+									if (firstDateRow[c] < 0) firstDateRow[c] = rowCount;
+									exampleDate[c] ??= record[c];
+									break;
+
+								case SimpleValueKind.Text:
+									textCounts[c]++;
+									if (firstTextRow[c] < 0) firstTextRow[c] = rowCount;
+									exampleText[c] ??= record[c];
+									break;
+							}
+
+							// Check for invalid dates
+							if (!string.IsNullOrWhiteSpace(record[c]) && IsInvalidDate(record[c]))
+							{
+								string? colName = null;
+								if (c < headerRecord.Length)
+								{
+									var name = headerRecord[c]?.Trim();
+									if (!string.IsNullOrWhiteSpace(name))
+										colName = name;
+								}
+
+								issues.Add(new CsvIssue
+								{
+									IssueType = CsvIssueType.INVALID_DATE,
+									Severity = CsvIssueSeverity.Warning,
+									Message = colName is not null
+										? $"Column '{colName}' contains an invalid date value: '{record[c]}'."
+										: $"Column {c + 1} contains an invalid date value: '{record[c]}'.",
+									RowNumber = rowCount,
+									ColumnName = colName
+								});
+							}
+						}
+					}
+
+					// Whitespace-only row
+					if (record.All(f => string.IsNullOrWhiteSpace(f)))
+					{
 						issues.Add(new CsvIssue
 						{
-							IssueType = CsvIssueType.WHITESPACE_IN_HEADERS,
+							IssueType = CsvIssueType.BLANK_ROW,
+							Severity = CsvIssueSeverity.Info, // or Warning if you want more visibility
+							Message = "Row contains only whitespace and will be ignored by most importers.",
+							RowNumber = rowCount
+						});
+
+						continue;
+					}
+
+					if (string.IsNullOrWhiteSpace(record[^1]))
+					{
+						issues.Add(new CsvIssue
+						{
+							IssueType = CsvIssueType.TRAILING_DELIMITER_ROW,
 							Severity = CsvIssueSeverity.Warning,
-							Message = $"Header column '{header[i]}' contains leading/trailing whitespace that may cause duplicate or mismatched columns.",
-							RowNumber = 1,
-							ColumnName = header[i].Trim()
+							Message = "Row appears to have a trailing delimiter, resulting in an extra empty field.",
+							RowNumber = rowCount
+						});
+					}
+					else if (columnCount is not null && record.Length != columnCount.Value)
+					{
+						issues.Add(new CsvIssue
+						{
+							IssueType = CsvIssueType.ROW_WIDTH_MISMATCH,
+							Severity = CsvIssueSeverity.Error,
+							Message = $"Row has {record.Length} fields but header has {columnCount.Value}.",
+							RowNumber = rowCount,
+							Sample = SampleRow(record)
 						});
 					}
 				}
-			}
 
-			// Read records
-			while (await csv.ReadAsync())
-			{
-				ct.ThrowIfCancellationRequested();
-				rowCount++;
-
-				// CsvHelper exposes current record fields via Parser.Record
-				var record = csv.Parser.Record ?? Array.Empty<string>();
-				var recordLength = trailingDelimiterHeader ? record.Length - 1 : record.Length;
-
-				// Track quoting patterns per column
+				// Check for inconsistent quoting after all records are read
 				if (columnCount is not null)
 				{
-					var quotedFlags = GetQuotedFlagsFromRawRecord(csv.Parser.RawRecord, delimiter.Value);
-
-					// Only compare overlapping columns
-					int n = Math.Min(Math.Min(record.Length, quotedFlags.Length), columnCount.Value);
-
-					for (int c = 0; c < n; c++)
+					for (int c = 0; c < columnCount.Value; c++)
 					{
-						if (quotedFlags[c])
-						{
-							if (!seenQuoted[c])
-							{
-								seenQuoted[c] = true;
-								firstQuotedRow[c] = rowCount;
-							}
-						}
-						else
-						{
-							if (!seenUnquoted[c])
-							{
-								seenUnquoted[c] = true;
-								firstUnquotedRow[c] = rowCount;
-							}
-						}
-					}
-
-					// Track value types per column
-					for (int c = 0; c < n; c++)
-					{
-						var kind = ClassifyValue(record[c]);
-
-						if (kind != SimpleValueKind.Empty && firstNonEmptyRow[c] < 0)
-							firstNonEmptyRow[c] = rowCount;
-
-						switch (kind)
-						{
-							case SimpleValueKind.Empty:
-								emptyCounts[c]++;
-								break;
-
-							case SimpleValueKind.Number:
-								numberCounts[c]++;
-								if (firstNumberRow[c] < 0) firstNumberRow[c] = rowCount;
-								exampleNumber[c] ??= record[c];
-								break;
-
-							case SimpleValueKind.Date:
-								dateCounts[c]++;
-								if (firstDateRow[c] < 0) firstDateRow[c] = rowCount;
-								exampleDate[c] ??= record[c];
-								break;
-
-							case SimpleValueKind.Text:
-								textCounts[c]++;
-								if (firstTextRow[c] < 0) firstTextRow[c] = rowCount;
-								exampleText[c] ??= record[c];
-								break;
-						}
-
-						// Check for invalid dates
-						if (!string.IsNullOrWhiteSpace(record[c]) && IsInvalidDate(record[c]))
+						if (seenQuoted[c] && seenUnquoted[c])
 						{
 							string? colName = null;
 							if (c < headerRecord.Length)
@@ -308,64 +376,59 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 									colName = name;
 							}
 
+							// pick a row number that points to the "second style" we discovered
+							var qRow = firstQuotedRow[c];
+							var uRow = firstUnquotedRow[c];
+							var rowForIssue = (qRow > 0 && uRow > 0) ? Math.Max(qRow, uRow) : (qRow > 0 ? qRow : uRow);
+
 							issues.Add(new CsvIssue
 							{
-								IssueType = CsvIssueType.INVALID_DATE,
+								IssueType = CsvIssueType.INCONSISTENT_QUOTING,
 								Severity = CsvIssueSeverity.Warning,
 								Message = colName is not null
-									? $"Column '{colName}' contains an invalid date value: '{record[c]}'."
-									: $"Column {c + 1} contains an invalid date value: '{record[c]}'.",
-								RowNumber = rowCount,
+									? $"Column '{colName}' is inconsistently quoted (quoted at row {qRow}, unquoted at row {uRow}). Some importers may treat values inconsistently."
+									: $"Column {c + 1} is inconsistently quoted (quoted at row {qRow}, unquoted at row {uRow}). Some importers may treat values inconsistently.",
+								RowNumber = rowForIssue,
 								ColumnName = colName
 							});
 						}
 					}
 				}
 
-				// Whitespace-only row
-				if (record.All(f => string.IsNullOrWhiteSpace(f)))
+				// Check for column type instability
+				if (columnCount is not null)
 				{
-					issues.Add(new CsvIssue
+					for (int c = 0; c < columnCount.Value; c++)
 					{
-						IssueType = CsvIssueType.BLANK_ROW,
-						Severity = CsvIssueSeverity.Info, // or Warning if you want more visibility
-						Message = "Row contains only whitespace and will be ignored by most importers.",
-						RowNumber = rowCount
-					});
+						int nonEmpty = numberCounts[c] + dateCounts[c] + textCounts[c];
+						if (nonEmpty < 10)
+							continue;
 
-					continue;
-				}
+						double pNum = (double)numberCounts[c] / nonEmpty;
+						double pDate = (double)dateCounts[c] / nonEmpty;
+						double pText = (double)textCounts[c] / nonEmpty;
 
-				if (string.IsNullOrWhiteSpace(record[^1]))
-				{
-					issues.Add(new CsvIssue
-					{
-						IssueType = CsvIssueType.TRAILING_DELIMITER_ROW,
-						Severity = CsvIssueSeverity.Warning,
-						Message = "Row appears to have a trailing delimiter, resulting in an extra empty field.",
-						RowNumber = rowCount
-					});
-				}
-				else if (columnCount is not null && record.Length != columnCount.Value)
-				{
-					issues.Add(new CsvIssue
-					{
-						IssueType = CsvIssueType.ROW_WIDTH_MISMATCH,
-						Severity = CsvIssueSeverity.Error,
-						Message = $"Row has {record.Length} fields but header has {columnCount.Value}.",
-						RowNumber = rowCount,
-						Sample = SampleRow(record)
-					});
-				}
-			}
+						// "Significant" presence threshold
+						bool hasNum = pNum >= 0.10;
+						bool hasDate = pDate >= 0.10;
+						bool hasText = pText >= 0.10;
 
-			// Check for inconsistent quoting after all records are read
-			if (columnCount is not null)
-			{
-				for (int c = 0; c < columnCount.Value; c++)
-				{
-					if (seenQuoted[c] && seenUnquoted[c])
-					{
+						int kinds = (hasNum ? 1 : 0) + (hasDate ? 1 : 0) + (hasText ? 1 : 0);
+
+						// Strong signal: mixed major kinds
+						bool chaotic = kinds >= 2;
+
+						// Also flag: mostly numeric/date but some text sneaks in
+						if (!chaotic)
+						{
+							bool mostlyNumOrDate = (pNum >= 0.80) || (pDate >= 0.80);
+							bool meaningfulText = pText >= 0.05;
+							chaotic = mostlyNumOrDate && meaningfulText;
+						}
+
+						if (!chaotic)
+							continue;
+
 						string? colName = null;
 						if (c < headerRecord.Length)
 						{
@@ -374,130 +437,69 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 								colName = name;
 						}
 
-						// pick a row number that points to the "second style" we discovered
-						var qRow = firstQuotedRow[c];
-						var uRow = firstUnquotedRow[c];
-						var rowForIssue = (qRow > 0 && uRow > 0) ? Math.Max(qRow, uRow) : (qRow > 0 ? qRow : uRow);
+						// Pick a row to point at: first "minority" kind if possible
+						int rowHint = firstNonEmptyRow[c];
+						if (pText > 0 && (pNum >= 0.80 || pDate >= 0.80) && firstTextRow[c] > 0)
+							rowHint = firstTextRow[c];
+						else if (pNum > 0 && pText >= 0.80 && firstNumberRow[c] > 0)
+							rowHint = firstNumberRow[c];
+						else if (pDate > 0 && pText >= 0.80 && firstDateRow[c] > 0)
+							rowHint = firstDateRow[c];
+
+						// Build a readable message
+						string Describe(double p) => $"{Math.Round(p * 100)}%";
+						var parts = new List<string>();
+						if (numberCounts[c] > 0) parts.Add($"numbers ({Describe(pNum)})");
+						if (dateCounts[c] > 0) parts.Add($"dates ({Describe(pDate)})");
+						if (textCounts[c] > 0) parts.Add($"text ({Describe(pText)})");
+
+						string example =
+							exampleText[c] is not null ? $" Example text: '{Truncate(exampleText[c], 32)}'." :
+							exampleDate[c] is not null ? $" Example date: '{Truncate(exampleDate[c], 32)}'." :
+							exampleNumber[c] is not null ? $" Example number: '{Truncate(exampleNumber[c], 32)}'." :
+							"";
 
 						issues.Add(new CsvIssue
 						{
-							IssueType = CsvIssueType.INCONSISTENT_QUOTING,
+							IssueType = CsvIssueType.COLUMN_TYPE_INSTABILITY,
 							Severity = CsvIssueSeverity.Warning,
 							Message = colName is not null
-								? $"Column '{colName}' is inconsistently quoted (quoted at row {qRow}, unquoted at row {uRow}). Some importers may treat values inconsistently."
-								: $"Column {c + 1} is inconsistently quoted (quoted at row {qRow}, unquoted at row {uRow}). Some importers may treat values inconsistently.",
-							RowNumber = rowForIssue,
+								? $"Column '{colName}' contains mixed value types: {string.Join(", ", parts)}.{example} This can cause importers to treat values inconsistently."
+								: $"Column {c + 1} contains mixed value types: {string.Join(", ", parts)}.{example} This can cause importers to treat values inconsistently.",
+							RowNumber = rowHint > 0 ? rowHint : null,
 							ColumnName = colName
 						});
 					}
 				}
 			}
-
-			// Check for column type instability
-			if (columnCount is not null)
+			catch (Exception ex)
 			{
-				for (int c = 0; c < columnCount.Value; c++)
+				await _telemetry.TryTrackAsync(
+					eventType: TelemetryEventType.AnalysisFailed
+					, rowCount: null
+					, columnCount: null
+					, fileSizeBytes: bytes.LongLength
+					, issueCount: issues.Count
+					, message: ex.Message
+					, ct: ct
+				);
+
+				issues.Add(new CsvIssue
 				{
-					int nonEmpty = numberCounts[c] + dateCounts[c] + textCounts[c];
-					if (nonEmpty < 10)
-						continue;
-
-					double pNum = (double)numberCounts[c] / nonEmpty;
-					double pDate = (double)dateCounts[c] / nonEmpty;
-					double pText = (double)textCounts[c] / nonEmpty;
-
-					// "Significant" presence threshold
-					bool hasNum = pNum >= 0.10;
-					bool hasDate = pDate >= 0.10;
-					bool hasText = pText >= 0.10;
-
-					int kinds = (hasNum ? 1 : 0) + (hasDate ? 1 : 0) + (hasText ? 1 : 0);
-
-					// Strong signal: mixed major kinds
-					bool chaotic = kinds >= 2;
-
-					// Also flag: mostly numeric/date but some text sneaks in
-					if (!chaotic)
-					{
-						bool mostlyNumOrDate = (pNum >= 0.80) || (pDate >= 0.80);
-						bool meaningfulText = pText >= 0.05;
-						chaotic = mostlyNumOrDate && meaningfulText;
-					}
-
-					if (!chaotic)
-						continue;
-
-					string? colName = null;
-					if (c < headerRecord.Length)
-					{
-						var name = headerRecord[c]?.Trim();
-						if (!string.IsNullOrWhiteSpace(name))
-							colName = name;
-					}
-
-					// Pick a row to point at: first "minority" kind if possible
-					int rowHint = firstNonEmptyRow[c];
-					if (pText > 0 && (pNum >= 0.80 || pDate >= 0.80) && firstTextRow[c] > 0)
-						rowHint = firstTextRow[c];
-					else if (pNum > 0 && pText >= 0.80 && firstNumberRow[c] > 0)
-						rowHint = firstNumberRow[c];
-					else if (pDate > 0 && pText >= 0.80 && firstDateRow[c] > 0)
-						rowHint = firstDateRow[c];
-
-					// Build a readable message
-					string Describe(double p) => $"{Math.Round(p * 100)}%";
-					var parts = new List<string>();
-					if (numberCounts[c] > 0) parts.Add($"numbers ({Describe(pNum)})");
-					if (dateCounts[c] > 0) parts.Add($"dates ({Describe(pDate)})");
-					if (textCounts[c] > 0) parts.Add($"text ({Describe(pText)})");
-
-					string example =
-						exampleText[c] is not null ? $" Example text: '{Truncate(exampleText[c], 32)}'." :
-						exampleDate[c] is not null ? $" Example date: '{Truncate(exampleDate[c], 32)}'." :
-						exampleNumber[c] is not null ? $" Example number: '{Truncate(exampleNumber[c], 32)}'." :
-						"";
-
-					issues.Add(new CsvIssue
-					{
-						IssueType = CsvIssueType.COLUMN_TYPE_INSTABILITY,
-						Severity = CsvIssueSeverity.Warning,
-						Message = colName is not null
-							? $"Column '{colName}' contains mixed value types: {string.Join(", ", parts)}.{example} This can cause importers to treat values inconsistently."
-							: $"Column {c + 1} contains mixed value types: {string.Join(", ", parts)}.{example} This can cause importers to treat values inconsistently.",
-						RowNumber = rowHint > 0 ? rowHint : null,
-						ColumnName = colName
-					});
-				}
+					IssueType = CsvIssueType.CSV_PARSE_FAILED,
+					Severity = CsvIssueSeverity.Error,
+					Message = "The CSV could not be fully parsed due to a structural error. This file may be malformed or use features not supported by the current rules."
+				});
 			}
-		}
-		catch (Exception ex)
-		{
-			await _telemetry.TryTrackAsync(
-				eventType: TelemetryEventType.AnalysisFailed
-				, rowCount: null
-				, columnCount: null
-				, fileSizeBytes: bytes.LongLength
-				, issueCount: issues.Count
-				, message: ex.Message
-				, ct: ct
-			);
 
-			issues.Add(new CsvIssue
-			{
-				IssueType = CsvIssueType.CSV_PARSE_FAILED,
-				Severity = CsvIssueSeverity.Error,
-				Message = "The CSV could not be fully parsed due to a structural error. This file may be malformed or use features not supported by the current rules."
-			});
-		}
+			var token = Guid.NewGuid().ToString("N");
 
-		var token = Guid.NewGuid().ToString("N");
+			// Build email body with analysis summary
+			var errorCount = issues.Count(i => i.Severity == CsvIssueSeverity.Error);
+			var warningCount = issues.Count(i => i.Severity == CsvIssueSeverity.Warning);
+			var infoCount = issues.Count(i => i.Severity == CsvIssueSeverity.Info);
 
-		// Build email body with analysis summary
-		var errorCount = issues.Count(i => i.Severity == CsvIssueSeverity.Error);
-		var warningCount = issues.Count(i => i.Severity == CsvIssueSeverity.Warning);
-		var infoCount = issues.Count(i => i.Severity == CsvIssueSeverity.Info);
-
-		var emailBody = $@"CSV Analysis Complete
+			var emailBody = $@"CSV Analysis Complete
 
 File Name: {fileName}
 File Size: {FormatBytes(bytes.LongLength)}
@@ -510,32 +512,44 @@ Issues Summary:
   Info: {infoCount}
   Total: {issues.Count}";
 
-		try
-		{
-			await _emailHelper.SendAsync("Analysis Completed", emailBody, ct: ct);
+			try
+			{
+				await _emailHelper.SendAsync("Analysis Completed", emailBody, ct: ct);
+			}
+			catch (Exception ex)
+			{
+				// Log the error but don't let it crash anything
+				await _telemetry.TryTrackAsync(
+					eventType: TelemetryEventType.EmailFailed
+					, message: ex.Message
+					, ct: CancellationToken.None
+				);
+			}
+
+			return new CsvAnalysisResult
+			{
+				Token = token,
+				FileName = fileName,
+				FileSizeBytes = bytes.LongLength,
+				DetectedEncoding = encoding?.WebName.ToUpperInvariant(),
+				DetectedNewline = newline,
+				DetectedDelimiter = delimiter,
+				RowCount = rowCount == 0 ? null : rowCount,
+				ColumnCount = columnCount,
+				Issues = issues.OrderBy(i => i.Severity).ThenBy(i => i.RowNumber).ToList()
+			};
 		}
 		catch (Exception ex)
 		{
 			// Log the error but don't let it crash anything
 			await _telemetry.TryTrackAsync(
-				eventType: TelemetryEventType.EmailFailed
+				eventType: TelemetryEventType.UnexpectedAnalysisError
 				, message: ex.Message
 				, ct: CancellationToken.None
 			);
-		}
 
-		return new CsvAnalysisResult
-		{
-			Token = token,
-			FileName = fileName,
-			FileSizeBytes = bytes.LongLength,
-			DetectedEncoding = encoding?.WebName.ToUpperInvariant(),
-			DetectedNewline = newline,
-			DetectedDelimiter = delimiter,
-			RowCount = rowCount == 0 ? null : rowCount,
-			ColumnCount = columnCount,
-			Issues = issues.OrderBy(i => i.Severity).ThenBy(i => i.RowNumber).ToList()
-		};
+			return null;
+		}
 	}
 
 	#region Error Checker Methods

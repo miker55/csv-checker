@@ -133,18 +133,18 @@
 </section>
 
 @code {
-    private bool _busy;
-    private string? _error;
-    private CancellationTokenSource? _cts;
+private bool _busy;
+private string? _error;
+private CancellationTokenSource? _cts;
 
-    // Tailwind-ish CTA button classes from your Hero.tsx
-    private string UploadButtonClass =>
-        "relative group cursor-pointer flex items-center justify-center gap-3 px-8 py-4 rounded-xl " +
-        "bg-teal-600 text-white font-semibold text-lg shadow-lg shadow-teal-600/20 " +
-        "hover:bg-teal-700 transition-all active:scale-95 " +
-        (_busy ? "opacity-50 cursor-not-allowed pointer-events-none" : "");
+// Tailwind-ish CTA button classes from your Hero.tsx
+private string UploadButtonClass =>
+    "relative group cursor-pointer flex items-center justify-center gap-3 px-8 py-4 rounded-xl " +
+    "bg-teal-600 text-white font-semibold text-lg shadow-lg shadow-teal-600/20 " +
+    "hover:bg-teal-700 transition-all active:scale-95 " +
+    (_busy ? "opacity-50 cursor-not-allowed pointer-events-none" : "");
 
-    public void Dispose()
+public void Dispose()
     {
         _cts?.Cancel();
         _cts?.Dispose();
@@ -179,7 +179,7 @@
                 _error = "Please upload a valid CSV file.";
                 await Telemetry.TryTrackAsync(
                     eventType: TelemetryEventType.WrongFileType
-                    , message: $"The file type attempted was {Path.GetExtension(file.Name)}."
+                    , message: $"The file name was {file.Name}."
                     , ct: ct
                 );
                 return;
@@ -191,7 +191,7 @@
                 _error = "File too large for v1 (max 15MB).";
                 await Telemetry.TryTrackAsync(
                     eventType: TelemetryEventType.FileTooLarge
-                    , message: $"The file size attempted was {file.Size / 1024.0 / 1024.0:F2}MB."
+                    , message: $"The file {file.Name} was too large, {file.Size / 1024.0 / 1024.0:F2}MB."
                     , ct: ct
                 );
                 return;
@@ -228,6 +228,13 @@
             }
 
             result = await Analyzer.AnalyzeAsync(file.Name, bytes, ct);
+            
+            if (result is null)
+            {
+                Nav.NavigateTo("/error");
+                return;
+            }
+            
             Store.Put(result);
 
             await Telemetry.TryTrackAsync(
