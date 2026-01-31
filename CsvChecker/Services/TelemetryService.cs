@@ -33,11 +33,19 @@ public sealed class TelemetryService : ITelemetryService
 	{
 		try
 		{
-			if (eventType == TelemetryEventType.AnalysisFailed)
-			{
-				try
-				{
-					var emailBody = $@"Telemetry Event
+			switch (eventType)
+			{ 
+				case TelemetryEventType.AnalysisFailed:
+				case TelemetryEventType.ErrorBoundary:
+				case TelemetryEventType.NoFileSelected:
+				case TelemetryEventType.WrongFileType:
+				case TelemetryEventType.EmailFailed:
+				case TelemetryEventType.FileTooLarge:
+				case TelemetryEventType.GAFailure:
+				case TelemetryEventType.UnexpectedAnalysisError:
+					try
+					{
+						var emailBody = $@"Telemetry Event
 
 EventType: {eventType}
 Message: {message ?? "N/A"}
@@ -46,16 +54,17 @@ Column Count: {columnCount?.ToString("N0") ?? "N/A"}
 File Size: {(fileSizeBytes.HasValue ? FormatBytes(fileSizeBytes.Value) : "N/A")}
 Issue Count: {issueCount?.ToString("N0") ?? "N/A"}";
 
-					await _emailHelper.SendAsync(
-						"Analysis Failed",
-						emailBody,
-						false,
-						ct);
-				}
-				catch
-				{
-					// V2?
-				}
+						await _emailHelper.SendAsync(
+							eventType,
+							emailBody,
+							false,
+							ct);
+					}
+					catch
+					{
+						// V2?
+					}
+					break;
 			}
 
 			var evt = new TelemetryEvent
