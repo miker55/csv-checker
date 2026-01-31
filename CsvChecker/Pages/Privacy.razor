@@ -1,23 +1,61 @@
 ﻿@page "/privacy"
 
-<PageContainer MaxWidth="narrow">
-    <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">Privacy Policy</h1>
+<PageContainer MaxWidth="default">
+    <div class="space-y-8">
+        <header class="space-y-2">
+            <h1 class="text-3xl font-bold tracking-tight text-slate-900">Privacy Policy</h1>
+            <p class="pt-6 text-slate-600">
+                CSV Checker is designed for <strong class="font-semibold text-slate-900">local, ephemeral diagnostics</strong>.
+                We do <strong class="font-semibold text-slate-900">not</strong> store, share, or sell your uploaded data.
+            </p>
+        </header>
 
-    <p class="mt-6 leading-relaxed text-slate-600">
-        This tool is built for local diagnostics. We never store, share, or sell your uploaded data.
-    </p>
+        <section class="space-y-3">
+            <h2 class="text-xl font-semibold text-slate-900">File processing</h2>
+            <ul class="list-disc space-y-2 pl-5 text-slate-700">
+                <li>Uploaded CSV files are processed <strong class="font-semibold text-slate-900">in memory only</strong> to generate a diagnostic report.</li>
+                <li>Files are <strong class="font-semibold text-slate-900">never written to disk</strong> and are discarded immediately after processing.</li>
+                <li>We do not retain copies of uploaded files or their contents.</li>
+            </ul>
+        </section>
 
-    <div class="mt-10 space-y-4 leading-relaxed text-slate-600">
-        <p>
-            Your CSV file is processed to generate a diagnostic report. The report token lets you view results and
-            download an errors file.
-        </p>
-        <p>
-            We use Google Analytics to collect anonymous usage statistics (page views and feature usage).
-            We do not store uploaded CSV files or their contents.
-        </p>
-        <p>
-            Telemetry is limited to operational metrics (e.g., counts and sizes) to help improve reliability.
+        <section class="space-y-3">
+            <h2 class="text-xl font-semibold text-slate-900">Reports</h2>
+            <ul class="list-disc space-y-2 pl-5 text-slate-700">
+                <li>Diagnostic reports are generated on demand and accessed via a temporary report token.</li>
+                <li>Reports are <strong class="font-semibold text-slate-900">not permanently stored</strong> and automatically expire after <strong class="font-semibold text-slate-900">1 hour</strong>.</li>
+                <li>Once expired, reports and associated metadata are no longer accessible.</li>
+            </ul>
+        </section>
+
+        <section class="space-y-3">
+            <h2 class="text-xl font-semibold text-slate-900">Analytics &amp; telemetry</h2>
+            <ul class="list-disc space-y-2 pl-5 text-slate-700">
+                <li>
+                    We use Google Analytics to collect <strong class="font-semibold text-slate-900">anonymous usage statistics</strong>
+                    (such as page views and feature usage).
+                </li>
+                <li>
+                    CSV contents, row data, and field values are <strong class="font-semibold text-slate-900">never</strong> sent to analytics services.
+                </li>
+                <li>
+                    Operational telemetry is limited to non-content metrics
+                    (for example: file size, row count, and error counts) to improve reliability and performance.
+                </li>
+            </ul>
+        </section>
+
+        <section class="space-y-3">
+            <h2 class="text-xl font-semibold text-slate-900">Data sharing</h2>
+            <ul class="list-disc space-y-2 pl-5 text-slate-700">
+                <li>We do not sell or share user data.</li>
+                <li>Uploaded files and report contents are never used for training, profiling, or marketing.</li>
+            </ul>
+        </section>
+
+        <p class="text-slate-600">
+            If you have questions or concerns about how data is handled,
+            please <a class="text-teal-700 underline underline-offset-2 hover:text-teal-800" href="/contact">contact us</a>.
         </p>
     </div>
 </PageContainer>
