@@ -1,0 +1,74 @@
+﻿@page "/error"
+@using CvsChecker.Library.Helpers
+@using CvsChecker.Library.Services.Interfaces
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject ITelemetryService TelemetryService
+
+<PageTitle>Error | CSV Checker</PageTitle>
+
+<div class="mx-auto flex max-w-4xl flex-col items-center px-4 py-24 text-center">
+    <div class="relative mb-12">
+        <div class="absolute inset-0 scale-150 rounded-full bg-red-100 opacity-50 blur-3xl"></div>
+        <div class="group relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border border-red-50 bg-white shadow-xl transition-transform duration-500 hover:rotate-0">
+            <svg class="h-16 w-16 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+        </div>
+    </div>
+
+    <h1 class="mb-4 text-4xl font-extrabold tracking-tight text-slate-900">
+        Something went sideways.
+    </h1>
+    <p class="mb-10 max-w-lg text-lg leading-relaxed text-slate-600">
+        We encountered an unexpected processing error. Don't worry, your data hasn't been compromised, but we couldn't complete that operation.
+    </p>
+
+    <div class="flex flex-col gap-4 sm:flex-row">
+        <button
+            @onclick="NavigateHome"
+            class="rounded-xl bg-slate-900 px-8 py-3 font-semibold text-white shadow-lg transition-all hover:bg-slate-800">
+            Return to Safety
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Exception? Exception { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Exception is not null)
+        {
+            var errorDetails = FormatException(Exception);
+            await TelemetryService.TryTrackAsync(
+                TelemetryEventType.ErrorBoundary
+                , message: errorDetails
+            );
+        }
+    }
+
+    private static string FormatException(Exception ex)
+    {
+        var details = $@"Exception Type: {ex.GetType().FullName}
+Message: {ex.Message}
+Stack Trace:
+{ex.StackTrace}";
+
+        if (ex.InnerException is not null)
+        {
+            details += $@"
+
+Inner Exception:
+{FormatException(ex.InnerException)}";
+        }
+
+        return details;
+    }
+
+    private void NavigateHome()
+    {
+        Nav.NavigateTo("/", forceLoad: true);
+    }
+}

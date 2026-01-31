@@ -1,0 +1,48 @@
+﻿@page "/notfound"
+@inject NavigationManager Nav
+
+<PageTitle>404 - Page Not Found | CSV Checker</PageTitle>
+
+<div class="mx-auto flex max-w-4xl flex-col items-center px-4 py-24 text-center">
+    <div class="relative mb-8">
+        <span class="font-black select-none leading-none text-[180px] text-slate-100">404</span>
+        <div class="absolute inset-0 flex items-center justify-center">
+            <div class="h-48 w-48 animate-pulse rounded-full bg-teal-500/10 blur-2xl"></div>
+            <div class="-rotate-6 relative rounded-2xl border border-slate-100 bg-white p-6 shadow-2xl">
+                <svg class="h-16 w-16 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <h1 class="mb-4 text-3xl font-bold text-slate-900">
+        Row Not Found
+    </h1>
+    <p class="mb-12 max-w-md text-lg text-slate-500">
+        The data you're looking for isn't here.
+    </p>
+
+    <button
+        @onclick="NavigateHome"
+        class="group relative inline-flex items-center gap-2 rounded-2xl bg-teal-600 px-8 py-4 font-bold text-white shadow-xl shadow-teal-600/20 transition-all hover:bg-teal-700 active:scale-95">
+        <svg class="h-5 w-5 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Back to Home
+    </button>
+
+    <div class="mt-20 grid select-none grid-cols-3 gap-8 opacity-20">
+        @for (int i = 0; i < 9; i++)
+        {
+            <div class="h-2 w-24 rounded-full bg-slate-300"></div>
+        }
+    </div>
+</div>
+
+@code {
+    private void NavigateHome()
+    {
+        Nav.NavigateTo("/", forceLoad: true);
+    }
+}
