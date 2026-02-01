@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    
+    <!-- Main pages -->
+    <url>
+        <loc>https://www.csv-checker.com/</loc>
+    </url>
+    
+    <url>
+        <loc>https://www.csv-checker.com/contact</loc>
+    </url>
+    
+    <url>
+        <loc>https://www.csv-checker.com/privacy</loc>
+    </url>
+    
+    <!-- CSV Errors section -->
+    <url>
+        <loc>https://www.csv-checker.com/csv-errors</loc>
+    </url>
+    
+    <url>
+        <loc>https://www.csv-checker.com/csv-errors/invalid-csv-format</loc>
+    </url>
+    
+    <url>
+        <loc>https://www.csv-checker.com/csv-errors/wrong-number-of-columns</loc>
+    </url>
+    
+    <url>
+        <loc>https://www.csv-checker.com/csv-errors/malformed-quotes</loc>
+    </url>
+    
+    <url>
+        <loc>https://www.csv-checker.com/csv-errors/encoding-issues</loc>
+    </url>
+    
+    <url>
+        <loc>https://www.csv-checker.com/csv-errors/excel-csv-import-errors</loc>
+    </url>
+    
+    <url>
+        <loc>https://www.csv-checker.com/csv-errors/shopify-csv-import-errors</loc>
+    </url>
+    
+</urlset>

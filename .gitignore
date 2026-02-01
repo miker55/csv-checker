@@ -263,3 +263,4 @@ telemetry.sqlite
 
 # Email configuration (contains sensitive credentials)
 CsvChecker/appsettings.Email.json
+/CsvChecker/appsettings.Email.Production.json
