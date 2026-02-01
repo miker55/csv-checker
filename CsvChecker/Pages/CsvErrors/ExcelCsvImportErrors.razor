@@ -1,0 +1,76 @@
+﻿@page "/csv-errors/excel-csv-import-errors"
+
+<PageTitle>Excel CSV import errors – Causes & Fixes | CSV Checker</PageTitle>
+<meta name="description" content="Fix Excel CSV import errors (encoding, delimiters, quotes, line breaks, hidden characters). Diagnose your CSV and find every affected row in seconds." />
+
+<PageContainer MaxWidth="default">
+    <!-- Header -->
+    <CsvErrorsHeader Title="Excel CSV import errors"
+                     Body="If your CSV worked before but breaks after opening or exporting from Excel, it’s usually an encoding, delimiter, quoting, or line-break issue. This guide covers the most common Excel-related CSV problems and how to find every affected row quickly." />
+
+    <!-- Content -->
+    <div class="mt-12 space-y-10">
+        <Section Borders="true">
+            <H2>Most common causes in Excel CSV exports</H2>
+            <Ul>
+                <li><strong>Encoding changes</strong> (UTF-8 vs Windows-1252 / Latin-1, or added BOM)</li>
+                <li><strong>Delimiter changes</strong> (comma vs semicolon depending on locale settings)</li>
+                <li><strong>Quotes and commas inside values</strong> (Excel may not quote fields the way your importer expects)</li>
+                <li><strong>Line breaks inside cells</strong> (Alt+Enter creates embedded newlines that can break row parsing)</li>
+                <li><strong>Hidden characters</strong> (non-breaking spaces, invisible control characters)</li>
+            </Ul>
+        </Section>
+
+        <Section Borders="true">
+            <H2>Examples that commonly break imports after Excel</H2>
+
+            <div class="mt-6 space-y-8">
+                <CodeExample Title="1) Wrong delimiter (Excel locale uses semicolons)"
+                             Code="id;name;email
+1;Ada;ada@example.com
+2;Bob;bob@example.com"
+                             Explanation="In some locales, Excel exports CSV with semicolons instead of commas. Tools expecting commas may treat each row as a single column." />
+
+                <CodeExample Title="2) BOM added to the header"
+                             Code="ï»¿id,name
+1,Ada"
+                             Explanation="Excel (or a CSV export path) may add a BOM. Some importers interpret it as part of the first header name, causing schema/header mismatches." />
+
+                <CodeExample Title="3) Line break inside a cell (Alt+Enter)"
+                             Code="id,notes
+1,first line
+second line
+2,ok"
+                             Explanation="A newline inside a value can split a single record into multiple rows unless the field is properly quoted." />
+
+                <CodeExample Title="4) Smart quotes / copy-paste punctuation"
+                             Code="id,comment
+1,“hello world” 2,”ok”"
+                             Explanation="Copy/paste into Excel can introduce smart quotes. Many parsers only treat the plain quote character (&quot;) as valid quoting." />
+
+                <CodeExample Title="5) Encoding mismatch (mojibake)"
+                             Code="id,name
+1,JosÃ©
+2,Ana"
+                             Explanation="If UTF-8 text is read as Windows-1252/Latin-1 (or re-saved incorrectly), accented characters may appear corrupted and imports may fail validation." />
+            </div>
+        </Section>
+
+        <Section Borders="true">
+            <H2>How to diagnose Excel CSV issues quickly</H2>
+            <P AdditionalClasses="mt-4">
+                Excel-related CSV problems are frustrating because the file often <em>looks</em> correct.
+                CSV Checker scans the entire file and reports every structural and encoding issue at once—so you can fix everything before importing.
+            </P>
+
+            <CsvErrorsFooterButtons />
+        </Section>
+
+        <RelatedLinks Title="Related CSV errors">
+            <RelatedLink Href="/csv-errors/encoding-issues">Encoding issues</RelatedLink>
+            <RelatedLink Href="/csv-errors/malformed-quotes">Malformed quotes</RelatedLink>
+            <RelatedLink Href="/csv-errors/wrong-number-of-columns">Wrong number of columns</RelatedLink>
+            <RelatedLink Href="/csv-errors/invalid-csv-format">Invalid CSV format</RelatedLink>
+        </RelatedLinks>
+    </div>
+</PageContainer>

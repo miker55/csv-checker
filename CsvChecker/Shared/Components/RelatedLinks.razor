@@ -1,0 +1,14 @@
+<section>
+    <H2 Size="small" AdditionalClasses="text-sm">@Title</H2>
+    <div class="mt-3 flex flex-wrap gap-2">
+        @ChildContent
+    </div>
+</section>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = "Related links";
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

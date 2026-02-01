@@ -1,0 +1,18 @@
+<section class="@GetSectionClasses()">
+    @ChildContent
+</section>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public bool Borders { get; set; } = false;
+
+    private string GetSectionClasses()
+    {
+        return Borders
+            ? "rounded-2xl border border-slate-200 bg-white p-6 sm:p-8"
+            : "pt-1";
+    }
+}

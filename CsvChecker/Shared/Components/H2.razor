@@ -1,0 +1,34 @@
+@if (!string.IsNullOrWhiteSpace(AdditionalClasses))
+{
+    <h2 class="@GetHeadingClasses() @AdditionalClasses">
+        @ChildContent
+    </h2>
+}
+else
+{
+    <h2 class="@GetHeadingClasses()">
+        @ChildContent
+    </h2>
+}
+
+@code {
+    [Parameter]
+    public string Size { get; set; } = "default";
+
+    [Parameter]
+    public string? AdditionalClasses { get; set; }
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; } = default!;
+
+    private string GetHeadingClasses()
+    {
+        return Size.ToLowerInvariant() switch
+        {
+            "hero" => "max-w-5xl text-teal-600 md:text-4xl",
+            "large" => "text-2xl font-extrabold tracking-tight text-slate-900",
+            "small" => "text-xl font-semibold text-slate-900",
+            _ => "text-xl font-semibold text-slate-900"
+        };
+    }
+}

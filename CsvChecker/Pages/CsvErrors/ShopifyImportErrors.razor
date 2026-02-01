@@ -1,0 +1,74 @@
+@page "/csv-errors/shopify-csv-import-errors"
+
+<PageTitle>Shopify CSV import errors – Causes & Fixes | CSV Checker</PageTitle>
+<meta name="description" content="Fix Shopify CSV import errors for products and customers. Learn common causes (missing required columns, bad handles, quotes, encoding) and diagnose your file in seconds." />
+
+<PageContainer MaxWidth="default">
+    <!-- Header -->
+    <CsvErrorsHeader Title="Shopify CSV import errors"
+                     Body="If your Shopify CSV upload fails, it’s usually caused by a formatting issue (columns, quoting, delimiter, encoding)
+or a Shopify-specific field rule (like handles, required headers, or variant rows). This guide covers the most common
+causes and how to find every affected row quickly." />
+
+    <!-- Content -->
+    <div class="mt-12 space-y-10">
+        <Section Borders="true">
+            <H2>Most common causes in Shopify CSV imports</H2>
+            <Ul>
+                <li><strong>Missing or misspelled headers</strong> (Shopify expects specific column names)</li>
+                <li><strong>Wrong number of columns</strong> due to extra commas / malformed quotes</li>
+                <li><strong>Handle problems</strong> (blank, duplicates, or invalid characters)</li>
+                <li><strong>Variant row structure issues</strong> (variant rows not aligned to the right product handle)</li>
+                <li><strong>Encoding issues</strong> (UTF-8 vs Latin-1, BOM, smart quotes)</li>
+            </Ul>
+        </Section>
+
+        <Section Borders="true">
+            <H2>Examples that commonly break Shopify imports</H2>
+
+            <div class="mt-6 space-y-8">
+                <CodeExample Title="1) Extra commas / wrong number of columns"
+                             Code="Handle,Title,Body (HTML)
+my-shirt,My Shirt,Great for summer, lightweight
+my-hat,My Hat,Classic fit"
+                             Explanation="Row 1 contains an extra comma in the Body field, so Shopify (and many importers) read the row as having too many columns." />
+
+                <CodeExample Title="2) Malformed quotes"
+                             Code="Handle,Title,Body (HTML)
+my-shirt,My Shirt,&quot;Great for summer
+my-hat,My Hat,&quot;Classic fit&quot;"
+                             Explanation="Row 1 opens a quote but never closes it, which can cause Shopify to mis-parse the rest of the file." />
+
+                <CodeExample Title="3) Duplicate or blank handles"
+                             Code="Handle,Title
+,my product with no handle
+my-shirt,My Shirt
+my-shirt,Another Shirt"
+                             Explanation="Handles should be present and unique per product. Blank or duplicate handles often cause Shopify import failures or unexpected overwrites." />
+
+                <CodeExample Title="4) Encoding / smart quotes"
+                             Code="Handle,Title
+my-shirt,“My Shirt”
+my-hat,“My Hat”"
+                             Explanation="Smart quotes can appear from copy/paste. Some systems treat these as invalid characters or misread them depending on encoding." />
+            </div>
+        </Section>
+
+        <Section Borders="true">
+            <H2>How to diagnose Shopify CSV issues quickly</H2>
+            <P AdditionalClasses="mt-4">
+                Shopify errors can be misleading because one bad row can cause failures downstream. CSV Checker scans the entire file
+                and reports <strong>all</strong> structural and encoding problems at once—so you can fix everything before re-uploading.
+            </P>
+
+            <CsvErrorsFooterButtons />
+        </Section>
+
+        <RelatedLinks Title="Related CSV errors">
+            <RelatedLink Href="/csv-errors/wrong-number-of-columns">Wrong number of columns</RelatedLink>
+            <RelatedLink Href="/csv-errors/malformed-quotes">Malformed quotes</RelatedLink>
+            <RelatedLink Href="/csv-errors/encoding-issues">Encoding issues</RelatedLink>
+            <RelatedLink Href="/csv-errors/invalid-csv-format">Invalid CSV format</RelatedLink>
+        </RelatedLinks>
+    </div>
+</PageContainer>

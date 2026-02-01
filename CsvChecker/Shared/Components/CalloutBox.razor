@@ -1,0 +1,28 @@
+<div class="@GetBoxClasses()">
+    @ChildContent
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public string Variant { get; set; } = "info";
+
+    [Parameter]
+    public string? AdditionalClasses { get; set; }
+
+    private string GetBoxClasses()
+    {
+        var baseClass = Variant.ToLowerInvariant() switch
+        {
+            "warning" => "rounded-2xl border border-amber-100 bg-amber-50 p-6",
+            "success" => "rounded-2xl border border-emerald-100 bg-emerald-50 p-6",
+            _ => "rounded-2xl border border-teal-100 bg-teal-50 p-6"
+        };
+
+        return string.IsNullOrWhiteSpace(AdditionalClasses)
+            ? baseClass
+            : $"{baseClass} {AdditionalClasses}";
+    }
+}

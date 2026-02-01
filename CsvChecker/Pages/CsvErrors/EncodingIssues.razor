@@ -1,0 +1,71 @@
+﻿@page "/csv-errors/encoding-issues"
+
+<PageTitle>Encoding issues – Causes & Fixes | CSV Checker</PageTitle>
+<meta name="description" content="Fix CSV encoding issues (UTF-8 vs Latin-1, BOM, smart quotes, hidden characters). Learn common causes and diagnose every affected row quickly." />
+
+<PageContainer MaxWidth="default">
+    <!-- Header -->
+    <CsvErrorsHeader Title="Encoding issues"
+                     Body="Encoding issues in CSV files can cause import failures or data corruption. 
+Common problems include mismatched UTF-8 and Latin-1 encodings, BOM markers, smart quotes, and hidden control characters. This guide helps you identify and fix these issues quickly." />
+
+    <!-- Content -->
+    <div class="mt-12 space-y-10">
+        <Section Borders="true">
+            <H2>Common causes</H2>
+            <Ul>
+                <li><strong>Wrong encoding</strong> (UTF-8 vs Latin-1 / Windows-1252)</li>
+                <li><strong>BOM (Byte Order Mark)</strong> at the start of the file (often shows up as weird characters)</li>
+                <li><strong>Smart quotes</strong> and other “pretty” punctuation from copy/paste</li>
+                <li><strong>Hidden control characters</strong> (non-printing characters that break parsers)</li>
+                <li><strong>Inconsistent encoding</strong> within the same file (mixed sources)</li>
+            </Ul>
+        </Section>
+
+        <Section Borders="true">
+            <H2>Examples of encoding issues in CSV files</H2>
+
+            <div class="mt-6 space-y-8">
+                <CodeExample Title="1) UTF-8 vs Latin-1 mismatch (mojibake)"
+                             Code="id,name
+1,JosÃ©
+2,Ana"
+                             Explanation="If UTF-8 text is read as Latin-1 (or Windows-1252), characters can appear corrupted (e.g., José → JosÃ©)." />
+
+                <CodeExample Title="2) BOM at the start of the header"
+                             Code="ï»¿id,name
+1,Ada"
+                             Explanation="A BOM can get interpreted as visible characters, which can break header matching (e.g., the first column becomes ï»¿id instead of id)." />
+
+                <CodeExample Title="3) Smart quotes (non-standard punctuation)"
+                             Code="id,comment
+1,“hello world”
+2,”ok”"
+                             Explanation="Some tools export or paste smart quotes. Many parsers only treat the plain quote character (&quot;) as valid quoting." />
+
+                <CodeExample Title="4) Hidden characters in values"
+                             Code="id,city
+1,New York
+2,LA"
+                             Explanation="Non-breaking spaces or other invisible characters can cause validation or matching failures even when the text looks identical." />
+            </div>
+        </Section>
+
+        <Section Borders="true">
+            <H2>How to diagnose encoding issues quickly</H2>
+            <P AdditionalClasses="mt-4">
+                Encoding problems are hard to spot by eye. CSV Checker detects likely encoding mismatches,
+                highlights suspicious characters, and points you to the exact rows and columns affected—so you can
+                fix the file before importing.
+            </P>
+
+            <CsvErrorsFooterButtons />
+        </Section>
+
+        <RelatedLinks Title="Related CSV errors">
+            <RelatedLink Href="/csv-errors/invalid-csv-format">Invalid CSV format</RelatedLink>
+            <RelatedLink Href="/csv-errors/wrong-number-of-columns">Wrong number of columns</RelatedLink>
+            <RelatedLink Href="/csv-errors/malformed-quotes">Malformed quotes</RelatedLink>
+        </RelatedLinks>
+    </div>
+</PageContainer>

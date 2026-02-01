@@ -1,0 +1,36 @@
+@if (!string.IsNullOrWhiteSpace(AdditionalClasses))
+{
+    <p class="@GetParagraphClasses() @AdditionalClasses">
+        @ChildContent
+    </p>
+}
+else
+{
+    <p class="@GetParagraphClasses()">
+        @ChildContent
+    </p>
+}
+
+@code {
+    [Parameter]
+    public string Size { get; set; } = "default";
+
+    [Parameter]
+    public string? AdditionalClasses { get; set; }
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; } = default!;
+
+    private string GetParagraphClasses()
+    {
+        var baseClasses = "leading-relaxed text-slate-600";
+        
+        return Size.ToLowerInvariant() switch
+        {
+            "large" => $"text-lg {baseClasses}",
+            "small" => "text-sm text-slate-600",
+            "muted" => "text-slate-500",
+            _ => $"text-base {baseClasses}"
+        };
+    }
+}

@@ -501,7 +501,6 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 
 			var emailBody = $@"CSV Analysis Complete
 
-File Name: {fileName}
 File Size: {FormatBytes(bytes.LongLength)}
 Row Count: {(rowCount == 0 ? "Unknown" : rowCount.ToString("N0"))}
 Column Count: {(columnCount?.ToString("N0") ?? "Unknown")}

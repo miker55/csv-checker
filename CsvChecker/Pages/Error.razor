@@ -4,6 +4,7 @@
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 @inject ITelemetryService TelemetryService
+@inject IWebHostEnvironment HostEnvironment
 
 <PageTitle>Error | CSV Checker</PageTitle>
 
@@ -17,12 +18,12 @@
         </div>
     </div>
 
-    <h1 class="mb-4 text-4xl font-extrabold tracking-tight text-slate-900">
+    <H1 Size="large" AdditionalClasses="mb-4">
         Something went sideways.
-    </h1>
-    <p class="mb-10 max-w-lg text-lg leading-relaxed text-slate-600">
+    </H1>
+    <P Size="large" AdditionalClasses="mb-10 max-w-lg">
         We encountered an unexpected processing error. Don't worry, your data hasn't been compromised, but we couldn't complete that operation.
-    </p>
+    </P>
 
     <div class="flex flex-col gap-4 sm:flex-row">
         <button
@@ -31,6 +32,14 @@
             Return to Safety
         </button>
     </div>
+
+    @if (HostEnvironment.IsDevelopment() && Exception is not null)
+    {
+        <div class="mt-8 w-full max-w-4xl rounded-lg border border-red-200 bg-red-50 p-6 text-left">
+            <h2 class="mb-4 text-xl font-bold text-red-900">Development Mode - Error Details</h2>
+            <pre class="overflow-auto whitespace-pre-wrap break-words text-sm text-red-800">@FormatException(Exception)</pre>
+        </div>
+    }
 </PageContainer>
 
 @code {

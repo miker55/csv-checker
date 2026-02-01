@@ -1,0 +1,68 @@
+﻿@page "/csv-errors/invalid-csv-format"
+
+<PageTitle>Invalid CSV format – Causes & Fixes | CSV Checker</PageTitle>
+<meta name="description" content="Learn what an “invalid CSV format” error means, common causes (quoting, delimiter, column count, encoding), and how to diagnose all issues quickly with CSV Checker." />
+
+<PageContainer MaxWidth="default">
+    <!-- Header -->
+    <CsvErrorsHeader Title="Invalid CSV format"
+                     Body="An invalid CSV format error usually means the file breaks standard CSV rules—like inconsistent column counts, malformed quotes, 
+an unexpected delimiter, or encoding issues. This guide helps you identify and fix these issues quickly." />
+
+    <!-- Content -->
+    <div class="mt-12 space-y-10">
+        <!-- Common causes -->
+        <Section Borders="true">
+            <H2>Common causes</H2>
+            <Ul AdditionalClasses="mt-4">
+                <li><strong class="font-semibold text-slate-900">Rows with different numbers of columns</strong> (missing or extra separators)</li>
+                <li><strong class="font-semibold text-slate-900">Unclosed or malformed quotes</strong> (e.g., a quote inside a value not properly escaped)</li>
+                <li><strong class="font-semibold text-slate-900">Wrong delimiter</strong> (comma vs semicolon vs tab)</li>
+                <li><strong class="font-semibold text-slate-900">Encoding problems</strong> (UTF-8 vs Latin-1, smart quotes, hidden characters)</li>
+            </Ul>
+        </Section>
+
+        <!-- What it looks like -->
+        <Section Borders="true">
+            <H2>Examples of CSV issues that trigger this error</H2>
+
+            <div class="mt-5 space-y-6">
+                <CodeExample Title="1) Inconsistent column counts"
+                             Code="id,name,email
+1,Ada,ada@example.com
+2,Bob
+3,Chris,chris@example.com"
+                             Explanation="Row 2 has fewer columns than the header." />
+
+                <CodeExample Title="2) Malformed quotes"
+                             Code="id,comment
+1,&quot;hello world
+2,&quot;this is fine&quot;"
+                             Explanation="Row 1 opens a quote but never closes it." />
+
+                <CodeExample Title="3) Wrong delimiter"
+                             Code="id;name;email
+1;Ada;ada@example.com"
+                             Explanation="This is valid CSV for semicolon-delimited imports, but tools expecting commas may fail." />
+            </div>
+        </Section>
+
+        <!-- How to diagnose -->
+        <Section Borders="true">
+            <H2>How to diagnose all issues quickly</H2>
+            <P AdditionalClasses="mt-4 text-slate-700">
+                Many importers stop at the first parsing error. CSV Checker scans the entire file and reports
+                <strong class="font-semibold text-slate-900">all</strong> structural and encoding issues at once—so you can fix everything before importing.
+            </P>
+
+            <CsvErrorsFooterButtons />
+        </Section>
+
+        <!-- Related links -->
+        <RelatedLinks Title="Related CSV errors">
+            <RelatedLink Href="/csv-errors/wrong-number-of-columns">Wrong number of columns</RelatedLink>
+            <RelatedLink Href="/csv-errors/malformed-quotes">Malformed quotes</RelatedLink>
+            <RelatedLink Href="/csv-errors/encoding-issues">Encoding issues</RelatedLink>
+        </RelatedLinks>
+    </div>
+</PageContainer>

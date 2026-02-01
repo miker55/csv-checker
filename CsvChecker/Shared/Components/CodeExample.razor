@@ -1,0 +1,18 @@
+@* Component for displaying CSV code examples with explanations *@
+
+<div>
+    <P Size="small" AdditionalClasses="font-semibold text-slate-900">@Title</P>
+    <pre class="mt-2 overflow-x-auto rounded-xl bg-slate-950 p-4 text-sm text-slate-100"><code>@Code</code></pre>
+    <P Size="small" AdditionalClasses="mt-2">@Explanation</P>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public string Code { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public string Explanation { get; set; } = default!;
+}

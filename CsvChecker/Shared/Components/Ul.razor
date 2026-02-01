@@ -1,0 +1,25 @@
+@if (!string.IsNullOrWhiteSpace(AdditionalClasses))
+{
+    <ul class="@GetListClasses() @AdditionalClasses">
+        @ChildContent
+    </ul>
+}
+else
+{
+    <ul class="@GetListClasses()">
+        @ChildContent
+    </ul>
+}
+
+@code {
+    [Parameter]
+    public string? AdditionalClasses { get; set; }
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; } = default!;
+
+    private string GetListClasses()
+    {
+        return "list-disc space-y-2 my-2 pl-5 text-slate-700";
+    }
+}

@@ -1,0 +1,23 @@
+<div class="text-center">
+    <Pill>CSV Import Errors</Pill>
+
+    <H1>@Title</H1>
+
+    <P AdditionalClasses="mx-auto mt-4 max-w-2xl">
+        @Body
+    </P>
+
+    <div class="mt-8 flex justify-center">
+        <LinkButton Href="/upload" Variant="primary">
+            Upload CSV to diagnose
+        </LinkButton>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Body { get; set; } = string.Empty;
+}

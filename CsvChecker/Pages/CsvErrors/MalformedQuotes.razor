@@ -1,0 +1,74 @@
+﻿@page "/csv-errors/malformed-quotes"
+
+<PageTitle>Malformed quotes – Causes & Fixes | CSV Checker</PageTitle>
+<meta name="description" content="Fix malformed quotes CSV import errors. Learn common causes (unclosed quotes, escaped quotes, line breaks in fields) and diagnose every affected row quickly." />
+
+<PageContainer>
+    <!-- Header -->
+    <CsvErrorsHeader Title="Malformed quotes"
+                     Body="“Malformed quotes” errors happen when a CSV field’s quoting breaks standard CSV rules—most commonly
+an unclosed quote, an unexpected quote character, or a line break inside a quoted value that the importer
+can’t parse. Once quoting is off, column counts often appear wrong in subsequent rows." />
+
+    <!-- Content -->
+    <div class="mt-12 space-y-10">
+        <Section Borders="true">
+            <H2>Common causes</H2>
+            <Ul>
+                <li><strong>Unclosed quote</strong> (a field starts with a quote but never ends)</li>
+                <li><strong>Unescaped quotes</strong> inside a quoted value (should be doubled: <code>""</code>)</li>
+                <li><strong>Line breaks inside fields</strong> without proper quoting</li>
+                <li><strong>Mismatched quote characters</strong> (smart quotes or mixed quote types)</li>
+                <li><strong>Partial quoting</strong> (a quote appears mid-field and confuses the parser)</li>
+            </Ul>
+        </Section>
+
+        <Section Borders="true">
+            <H2>Examples that trigger “malformed quotes”</H2>
+
+            <div class="mt-6 space-y-8">
+                <CodeExample Title="1) Unclosed quote"
+                             Code="id,comment
+1,&quot;hello world
+2,&quot;this is fine&quot;"
+                             Explanation="Row 1 opens a quote but never closes it, so the parser may treat the rest of the file as part of that field." />
+
+                <CodeExample Title="2) Quote inside a quoted value (needs escaping)"
+                             Code="id,comment
+1,&quot;She said &quot;hello&quot; to me&quot;
+2,&quot;ok&quot;"
+                             Explanation="If you need a quote character inside a quoted field, it usually must be escaped by doubling it (e.g., &quot;&quot;hello&quot;&quot;)." />
+
+                <CodeExample Title="3) Line break inside a field (not properly quoted)"
+                             Code="id,notes
+1,first line
+second line
+2,ok"
+                             Explanation="A raw newline splits the record into multiple rows. If you need line breaks inside a field, the field must be properly quoted." />
+
+                <CodeExample Title="4) Smart quotes (non-standard quote characters)"
+                             Code="id,comment
+1,“hello world”
+2,“ok”"
+                             Explanation="Some exports replace normal quotes with “smart quotes”, which many importers don’t treat as valid CSV quoting." />
+            </div>
+        </Section>
+
+        <Section Borders="true">
+            <H2>How to diagnose malformed quotes quickly</H2>
+            <P AdditionalClasses="mt-4">
+                Many importers stop at the first parse failure. CSV Checker scans the entire file and reports
+                <strong>every row</strong> affected by malformed quoting, including the row/column location and related
+                downstream issues (like unexpected column counts).
+            </P>
+
+            <CsvErrorsFooterButtons />
+        </Section>
+
+        <RelatedLinks Title="Related CSV errors">
+            <RelatedLink Href="/csv-errors/invalid-csv-format">Invalid CSV format</RelatedLink>
+            <RelatedLink Href="/csv-errors/wrong-number-of-columns">Wrong number of columns</RelatedLink>
+            <RelatedLink Href="/csv-errors/encoding-issues">Encoding issues</RelatedLink>
+        </RelatedLinks>
+    </div>
+</PageContainer>

@@ -1,0 +1,60 @@
+@page "/csv-errors"
+
+<PageTitle>CSV Errors – Causes & Fixes | CSV Checker</PageTitle>
+<meta name="description" content="Browse common CSV import errors and learn how to fix invalid CSV format, wrong column counts, malformed quotes, encoding issues, and more." />
+
+<PageContainer>
+    <div class="text-center">
+        <H1>CSV Errors: causes & fixes</H1>
+        <P AdditionalClasses="mx-auto mt-4 max-w-2xl sm:text-lg">
+            If a CSV upload or import failed, start here. These guides explain the most common issues and how to diagnose them quickly.
+        </P>
+
+        <div class="mt-8 flex justify-center">
+            <LinkButton Href="/upload" Variant="primary">
+                Upload CSV to diagnose
+            </LinkButton>
+        </div>
+    </div>
+
+    <div class="mt-12 grid gap-4 sm:grid-cols-2">
+        <ErrorLinkCard Href="/csv-errors/invalid-csv-format"
+                       Title="Invalid CSV format"
+                       Description="Common causes: quoting, delimiter, column mismatches, encoding." />
+
+        <ErrorLinkCard Href="/csv-errors/wrong-number-of-columns"
+                       Title="Wrong number of columns"
+                       Description="Find rows with missing/extra delimiters and inconsistent schemas." />
+
+        <ErrorLinkCard Href="/csv-errors/malformed-quotes"
+                       Title="Malformed quotes"
+                       Description="Unclosed quotes, escaped quotes, and line breaks inside fields." />
+
+        <ErrorLinkCard Href="/csv-errors/encoding-issues"
+                       Title="Encoding issues"
+                       Description="UTF-8 vs Latin-1, smart quotes, hidden characters, BOM problems." />
+
+        <ErrorLinkCard Href="/csv-errors/shopify-csv-import-errors"
+                       Title="Shopify CSV import errors"
+                       Description="Handle errors, variant row issues, required headers, and formatting problems in Shopify CSV uploads." />
+
+        <ErrorLinkCard Href="/csv-errors/excel-csv-import-errors"
+                       Title="Excel CSV import errors"
+                       Description="Fix CSV files that break after opening or exporting from Excel due to encoding, delimiter, quoting, or line-break issues." />
+    </div>
+
+    <CalloutBox Variant="info" AdditionalClasses="mt-12">
+        <H2 Size="small" AdditionalClasses="text-base">Want a specific guide?</H2>
+        <P Size="small" AdditionalClasses="mt-2 text-slate-700">
+            If your error isn’t listed yet, upload your file and we’ll tell you exactly what’s wrong.
+        </P>
+        <div class="mt-4">
+            <LinkButton Href="/upload" Variant="primary">
+                Upload CSV
+            </LinkButton>
+        </div>
+    </CalloutBox>
+</PageContainer>
+
+
+

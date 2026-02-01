@@ -10,21 +10,27 @@
 @inject NavigationManager Nav
 @implements IDisposable
 
+<PageTitle>CSV Validator & Import Error Checker – CSV Checker</PageTitle>
+<meta name="description" content="Validate CSV files online and catch import errors before they break your workflow. Find column mismatches, encoding issues, and malformed rows instantly." />
+
 <!-- HERO -->
 <div class="flex flex-col items-center px-4 py-20 text-center sm:pb-1 sm:pt-16">
     <Pill>
         Secure &amp; Private
     </Pill>
 
-    <h1 class="max-w-5xl text-4xl font-extrabold leading-snug tracking-tight text-slate-900 md:text-6xl md:leading-tight">
-        Professional CSV diagnostics <br />
-        <span class="text-teal-600">for developers &amp; analysts.</span>
-    </h1>
+    <H1 Size="hero">
+        Validate CSV files before importing
+    </H1>
 
-    <p class="mt-6 max-w-2xl text-lg leading-relaxed text-slate-600 sm:text-xl">
-        Upload your CSV files to identify structural errors, encoding mismatches, and data integrity issues.
-        Instant reports, no data retention.
-    </p>
+    <H2 Size="hero" AdditionalClasses="mt-4">
+        Professional CSV diagnostics for developers & analysts.
+    </H2>
+
+    <P AdditionalClasses="mx-auto mt-4 max-w-3xl">
+        Identify structural errors, encoding issues, delimiter mismatches, and malformed rows in your CSV files
+        before importing. Get a complete, human-readable error report in seconds.
+    </P>
 
     <div class="mt-10 flex flex-col items-center gap-4">
         <!-- Real file input is hidden; label is the pretty button -->
@@ -167,7 +173,7 @@ public void Dispose()
                 _error = "Please upload a valid CSV file.";
                 await Telemetry.TryTrackAsync(
                     eventType: TelemetryEventType.WrongFileType
-                    , message: $"The file name was {file.Name}."
+                    , message: $"The file type attempted was {Path.GetExtension(file.Name)}."
                     , ct: ct
                 );
                 return;
@@ -179,7 +185,7 @@ public void Dispose()
                 _error = "File too large for v1 (max 15MB).";
                 await Telemetry.TryTrackAsync(
                     eventType: TelemetryEventType.FileTooLarge
-                    , message: $"The file {file.Name} was too large, {file.Size / 1024.0 / 1024.0:F2}MB."
+                    , message: $"The file size attempted was {file.Size / 1024.0 / 1024.0:F2}MB."
                     , ct: ct
                 );
                 return;

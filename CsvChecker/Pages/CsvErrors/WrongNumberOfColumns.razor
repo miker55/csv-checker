@@ -1,0 +1,71 @@
+﻿@page "/csv-errors/wrong-number-of-columns"
+
+<PageTitle>Wrong number of columns – Causes & Fixes | CSV Checker</PageTitle>
+<meta name="description" content="Fix 'wrong number of columns' CSV import errors. Learn common causes (extra delimiters, quotes, line breaks) and diagnose every affected row quickly." />
+
+<PageContainer>
+    <!-- Header -->
+    <CsvErrorsHeader Title="Wrong number of columns"
+                     Body="This error means one or more rows have a different number of fields than the header (or expected schema).
+Common problems include extra/missing delimiters, malformed quotes, line breaks inside values, or using the wrong delimiter. This guide helps you identify and fix these issues quickly." />
+
+    <!-- Content -->
+    <div class="mt-12 space-y-10">
+        <Section Borders="true">
+            <H2>Common causes</H2>
+            <Ul>
+                <li><strong>Extra delimiter</strong> in a value (e.g., a comma in an unquoted field)</li>
+                <li><strong>Missing delimiter</strong> (a separator removed or a field merged)</li>
+                <li><strong>Malformed quotes</strong> causing the parser to misread delimiters</li>
+                <li><strong>Line breaks inside fields</strong> that aren’t properly quoted</li>
+                <li><strong>Wrong delimiter</strong> (comma vs semicolon vs tab) leading to unexpected splits</li>
+            </Ul>
+        </Section>
+
+        <Section Borders="true">
+            <H2>Examples that trigger “wrong number of columns”</H2>
+
+            <div class="mt-6 space-y-8">
+                <CodeExample Title="1) Extra comma in an unquoted value"
+                             Code="id,name,notes
+1,Ada,met at SF, conference
+2,Bob,ok"
+                             Explanation="Row 1 contains an extra comma in the notes field, so it splits into too many columns." />
+
+                <CodeExample Title="2) Missing value / fewer fields than the header"
+                             Code="id,name,email
+1,Ada,ada@example.com
+2,Bob
+3,Chris,chris@example.com"
+                             Explanation="Row 2 has fewer fields than the header, which makes the importer report a column mismatch." />
+
+                <CodeExample Title="3) Malformed quotes can shift column counts"
+                             Code="id,comment
+1,&quot;hello, world
+2,&quot;this is fine&quot;"
+                             Explanation="Row 1 opens a quote but never closes it, so subsequent rows may be parsed with the wrong number of columns." />
+
+                <CodeExample Title="4) Wrong delimiter (comma vs semicolon)"
+                             Code="id;name;email
+1;Ada;ada@example.com"
+                             Explanation="This is valid CSV for semicolon-delimited imports, but tools expecting commas may fail." />
+            </div>
+        </Section>
+
+        <Section Borders="true">
+            <H2>How to diagnose all affected rows quickly</H2>
+            <P AdditionalClasses="mt-4">
+                Many importers stop at the first mismatch. CSV Checker scans the entire file and reports
+                <strong>every row</strong> with a different field count, plus related issues like malformed quotes and delimiter problems.
+            </P>
+
+            <CsvErrorsFooterButtons />
+        </Section>
+
+        <RelatedLinks Title="Related CSV errors">
+            <RelatedLink Href="/csv-errors/invalid-csv-format">Invalid CSV format</RelatedLink>
+            <RelatedLink Href="/csv-errors/malformed-quotes">Malformed quotes</RelatedLink>
+            <RelatedLink Href="/csv-errors/encoding-issues">Encoding issues</RelatedLink>
+        </RelatedLinks>
+    </div>
+</PageContainer>

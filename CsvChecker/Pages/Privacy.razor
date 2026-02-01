@@ -3,34 +3,34 @@
 <PageContainer MaxWidth="default">
     <div class="space-y-8">
         <header class="space-y-2">
-            <h1 class="text-3xl font-bold tracking-tight text-slate-900">Privacy Policy</h1>
-            <p class="pt-6 text-slate-600">
+            <H1 Size="small">Privacy Policy</H1>
+            <P AdditionalClasses="pt-6">
                 CSV Checker is designed for <strong class="font-semibold text-slate-900">local, ephemeral diagnostics</strong>.
                 We do <strong class="font-semibold text-slate-900">not</strong> store, share, or sell your uploaded data.
-            </p>
+            </P>
         </header>
 
-        <section class="space-y-3">
-            <h2 class="text-xl font-semibold text-slate-900">File processing</h2>
-            <ul class="list-disc space-y-2 pl-5 text-slate-700">
+        <Section>
+            <H2>File processing</H2>
+            <Ul>
                 <li>Uploaded CSV files are processed <strong class="font-semibold text-slate-900">in memory only</strong> to generate a diagnostic report.</li>
                 <li>Files are <strong class="font-semibold text-slate-900">never written to disk</strong> and are discarded immediately after processing.</li>
                 <li>We do not retain copies of uploaded files or their contents.</li>
-            </ul>
-        </section>
+            </Ul>
+        </Section>
 
-        <section class="space-y-3">
-            <h2 class="text-xl font-semibold text-slate-900">Reports</h2>
-            <ul class="list-disc space-y-2 pl-5 text-slate-700">
+        <Section>
+            <H2>Reports</H2>
+            <Ul>
                 <li>Diagnostic reports are generated on demand and accessed via a temporary report token.</li>
                 <li>Reports are <strong class="font-semibold text-slate-900">not permanently stored</strong> and automatically expire after <strong class="font-semibold text-slate-900">1 hour</strong>.</li>
                 <li>Once expired, reports and associated metadata are no longer accessible.</li>
-            </ul>
-        </section>
+            </Ul>
+        </Section>
 
-        <section class="space-y-3">
-            <h2 class="text-xl font-semibold text-slate-900">Analytics &amp; telemetry</h2>
-            <ul class="list-disc space-y-2 pl-5 text-slate-700">
+        <Section>
+            <H2>Analytics &amp; telemetry</H2>
+            <Ul>
                 <li>
                     We use Google Analytics to collect <strong class="font-semibold text-slate-900">anonymous usage statistics</strong>
                     (such as page views and feature usage).
@@ -39,23 +39,22 @@
                     CSV contents, row data, and field values are <strong class="font-semibold text-slate-900">never</strong> sent to analytics services.
                 </li>
                 <li>
-                    Operational telemetry is limited to non-content metrics
-                    (for example: file size, row count, and error counts) to improve reliability and performance.
+                    Operational telemetry may include non-content file metadata such as file size, row count, delimiter, encoding, and file type (extension).
                 </li>
-            </ul>
-        </section>
+            </Ul>
+        </Section>
 
-        <section class="space-y-3">
-            <h2 class="text-xl font-semibold text-slate-900">Data sharing</h2>
-            <ul class="list-disc space-y-2 pl-5 text-slate-700">
+        <Section>
+            <H2>Data sharing</H2>
+            <Ul>
                 <li>We do not sell or share user data.</li>
                 <li>Uploaded files and report contents are never used for training, profiling, or marketing.</li>
-            </ul>
-        </section>
+            </Ul>
+        </Section>
 
-        <p class="text-slate-600">
+        <P>
             If you have questions or concerns about how data is handled,
             please <a class="text-teal-700 underline underline-offset-2 hover:text-teal-800" href="/contact">contact us</a>.
-        </p>
+        </P>
     </div>
 </PageContainer>
