@@ -3,6 +3,7 @@ using CsvHelper;
 using CsvHelper.Configuration;
 using CvsChecker.Library.Helpers;
 using CvsChecker.Library.Services.Interfaces;
+using Microsoft.Extensions.Logging;
 using System.Globalization;
 using System.Text;
 
@@ -43,15 +44,18 @@ public sealed class CsvAnalyzer : ICsvAnalyzer
 
 	private readonly ITelemetryService _telemetry;
 	private readonly IEmailHelper _emailHelper;
+    private readonly ILogger<CsvAnalyzer> _logger;
 
-	public CsvAnalyzer(
+    public CsvAnalyzer(
 		ITelemetryService telemetry
 		, IEmailHelper emailHelper
+        , ILogger<CsvAnalyzer> logger
 	)
 	{
 		_telemetry = telemetry;
 		_emailHelper = emailHelper;
-	}
+        _logger = logger;
+    }
 
 	public async Task<CsvAnalysisResult?> AnalyzeAsync(
 		string fileName

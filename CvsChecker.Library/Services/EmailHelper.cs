@@ -1,5 +1,6 @@
 using CvsChecker.Library.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Net.Mail;
 
@@ -8,10 +9,15 @@ namespace CvsChecker.Library.Services;
 public sealed class EmailHelper : IEmailHelper
 {
 	private readonly IConfiguration _configuration;
+    private readonly ILogger<EmailHelper> _logger;
 
-	public EmailHelper(IConfiguration configuration)
+    public EmailHelper(
+        IConfiguration configuration
+        , ILogger<EmailHelper> logger
+    )
 	{
 		_configuration = configuration;
+        _logger = logger;
 	}
 
 	public async Task SendAsync(
@@ -21,13 +27,17 @@ public sealed class EmailHelper : IEmailHelper
 		, CancellationToken ct = default
 	)
 	{
-		try
+        string? smtpHost = null;
+        int smtpPort = 0;
+        string? toEmail = null;
+        string? fromEmail = null;
+        try
 		{
-			var smtpHost = _configuration["Email:SmtpHost"] ?? "smtp.gmail.com";
-			var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "587");
-			var toEmail = _configuration["Email:ToEmail"]
+			smtpHost = _configuration["Email:SmtpHost"] ?? "smtp.gmail.com";
+			smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "587");
+			toEmail = _configuration["Email:ToEmail"]
 				?? throw new InvalidOperationException("Email:ToEmail is not configured.");
-			var fromEmail = _configuration["Email:FromEmail"]
+			fromEmail = _configuration["Email:FromEmail"]
 				?? throw new InvalidOperationException("Email:FromEmail is not configured.");
 			var fromPassword = _configuration["Email:FromPassword"]
 				?? throw new InvalidOperationException("Email:FromPassword is not configured.");
@@ -51,9 +61,18 @@ public sealed class EmailHelper : IEmailHelper
 
 			await smtpClient.SendMailAsync(message, ct);
 		}
-		catch
-		{
-			// TODO: Log email failure if needed
-		}
-	}
+        catch (SmtpException ex)
+        {
+            // Azure will see this in Log Stream; users won't.
+            _logger.LogError(ex,
+                "Failed to send report email via {SmtpHost}:{SmtpPort}. StatusCode={StatusCode}. To={ToEmail}. From={FromEmail}",
+                smtpHost, smtpPort, ex.StatusCode, toEmail, fromEmail);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Unexpected error sending report email. To={ToEmail}, From={FromEmail}, Host={SmtpHost}:{SmtpPort}",
+                toEmail, fromEmail, smtpHost, smtpPort);
+        }
+    }
 }
