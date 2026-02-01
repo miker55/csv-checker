@@ -7,15 +7,10 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Load email configuration (environment-specific)
-var emailConfigFile = builder.Environment.IsProduction()
-    ? "appsettings.Email.Production.json"
-    : "appsettings.Email.json";
-
 builder.Configuration.AddJsonFile(
-    emailConfigFile
-    , optional: false
-    , reloadOnChange: true
+    "appsettings.Email.json",
+    optional: true,
+    reloadOnChange: true
 );
 
 builder.Services.AddRazorPages();
