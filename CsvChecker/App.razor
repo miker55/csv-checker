@@ -23,7 +23,7 @@
         </Found>
         <NotFound>
             <LayoutView Layout="@typeof(MainLayout)">
-                <NotFound />
+                <NotFound AttemptedPath="@GetAttemptedPath()" />
             </LayoutView>
         </NotFound>
     </Router>
@@ -85,6 +85,12 @@
                 page_location = absoluteUri
             }
         );
+    }
+
+    private string GetAttemptedPath()
+    {
+        var relative = Nav.ToBaseRelativePath(Nav.Uri);
+        return string.IsNullOrEmpty(relative) ? "/" : "/" + relative;
     }
 
     public void Dispose()
