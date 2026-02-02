@@ -74,8 +74,7 @@
         @if (expiresUtc is not null)
         {
             <P Size="small" AdditionalClasses="mt-2 flex items-center gap-1 text-gray-500">
-                <span>?</span>
-                Report expires at 6:20 PM (1 hour after upload).
+                This online report will expire in 1 hour.
             </P>
         }
 
@@ -221,16 +220,28 @@
 
                                     <div class="flex items-center gap-2">
                                         <span class="text-xs text-slate-500">Per page:</span>
-                                        @foreach (var size in new[] { 10, 25, 50, 100 })
+                                        @{
+                                            var pageSizes = new[] { 10, 25, 50, 100 };
+                                            var totalIssues = FilteredIssues.Count();
+                                            var firstSizeShowingAll = pageSizes.FirstOrDefault(s => s >= totalIssues);
+                                        }
+                                        @foreach (var size in pageSizes)
                                         {
                                             var currentSize = size;
-                                            <button type="button"
-                                                    class="@(currentSize == _pageSize
-                                                                                                            ? "rounded-lg border border-teal-600 bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-teal-700"
-                                                                                                            : "rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-all hover:border-teal-300 hover:text-teal-700")"
-                                                    @onclick="@(() => ChangePageSize(currentSize))">
-                                                @currentSize
-                                            </button>
+                                            var shouldShow = currentSize == _pageSize 
+                                                          || currentSize < totalIssues 
+                                                          || (firstSizeShowingAll > 0 && currentSize == firstSizeShowingAll);
+
+                                            @if (shouldShow)
+                                            {
+                                                <button type="button"
+                                                        class="@(currentSize == _pageSize
+                                                                                                                ? "rounded-lg border border-teal-600 bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-teal-700"
+                                                                                                                : "rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-all hover:border-teal-300 hover:text-teal-700")"
+                                                        @onclick="@(() => ChangePageSize(currentSize))">
+                                                    @currentSize
+                                                </button>
+                                            }
                                         }
                                     </div>
                                 </div>
