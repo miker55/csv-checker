@@ -38,8 +38,7 @@ The goal is not just to say *“this file is invalid”*, but to explain **why**
 
 The hosted version is available at:
 
-👉 **https://csv-checker.com**  
-*(or your Azure URL during development)*
+👉 **https://www.csv-checker.com**  
 
 The public site is intended for end users. This repository is the source code.
 
@@ -64,18 +63,3 @@ The app is intentionally boring in a good way: no queues, no workers, no exotic 
 - .NET SDK (matching the target framework in the project)
 - A local SMTP server or email disabled (see below)
 
-### Configuration
-
-Local development uses JSON config files:
-
-```json
-{
-  "Email": {
-    "SmtpHost": "localhost",
-    "SmtpPort": "1025",
-    "ToEmail": "you@example.com",
-    "FromEmail": "noreply@example.com",
-    "FromPassword": "",
-    "FromName": "CSV Checker"
-  }
-}

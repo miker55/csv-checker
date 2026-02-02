@@ -9,7 +9,8 @@
 		public const string ErrorBoundary = "error_boundary";
 		public const string FileTooLarge = "file_too_large";
         public const string GAFailure = "ga_failure";
-		public const string NoFileSelected = "no_file_selected";
+        public const string PageNotFound = "page_not_found";
+        public const string NoFileSelected = "no_file_selected";
 		public const string UnexpectedAnalysisError = "unexpected_analysis_error";
 		public const string Upload = "upload";
 		public const string WrongFileType = "wrong_file_type";

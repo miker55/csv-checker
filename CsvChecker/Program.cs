@@ -37,6 +37,18 @@ using (var scope = app.Services.CreateScope())
     await db.Database.MigrateAsync();
 }
 
+app.Use(async (context, next) =>
+{
+    if (string.Equals(context.Request.Host.Host, "www.csv-checker.com", StringComparison.OrdinalIgnoreCase))
+    {
+        var newUrl = $"https://csv-checker.com{context.Request.PathBase}{context.Request.Path}{context.Request.QueryString}";
+        context.Response.Redirect(newUrl, permanent: true);
+        return;
+    }
+
+    await next();
+});
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
