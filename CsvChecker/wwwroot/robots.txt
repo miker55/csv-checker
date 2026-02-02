@@ -1,10 +1,9 @@
-# robots.txt for www.csv-checker.com
+# robots.txt for csv-checker.com
 
 User-agent: *
 Allow: /
 
-# Sitemap location
-Sitemap: https://www.csv-checker.com/sitemap.xml
-
 # Disallow dynamic report pages (they require authentication tokens)
 Disallow: /report/
+
+Sitemap: https://csv-checker.com/sitemap.xml

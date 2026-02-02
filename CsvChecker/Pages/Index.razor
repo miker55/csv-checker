@@ -10,7 +10,7 @@
 @inject NavigationManager Nav
 @implements IDisposable
 
-<PageTitle>CSV Validator & Import Error Checker – CSV Checker</PageTitle>
+<PageTitle>CSV Checker – Validate CSV Files & Find Errors Online</PageTitle>
 <meta name="description" content="Validate CSV files online and catch import errors before they break your workflow. Find column mismatches, encoding issues, and malformed rows instantly." />
 
 <!-- HERO -->
@@ -179,10 +179,10 @@ public void Dispose()
                 return;
             }
 
-            const long maxBytes = 15 * 1024 * 1024; // 15MB
+            const long maxBytes = 5 * 1024 * 1024; // 5MB
             if (file.Size > maxBytes)
             {
-                _error = "File too large for v1 (max 15MB).";
+                _error = "Our site is currently in beta and is limited to 5MB files or smaller. Please check back soon!";
                 await Telemetry.TryTrackAsync(
                     eventType: TelemetryEventType.FileTooLarge
                     , message: $"The file size attempted was {file.Size / 1024.0 / 1024.0:F2}MB."
