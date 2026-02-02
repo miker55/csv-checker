@@ -38,7 +38,7 @@ The goal is not just to say *“this file is invalid”*, but to explain **why**
 
 The hosted version is available at:
 
-👉 **https://www.csv-checker.com**  
+👉 **https://csv-checker.com**  
 
 The public site is intended for end users. This repository is the source code.
 
