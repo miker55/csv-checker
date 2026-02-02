@@ -35,9 +35,7 @@ an unexpected delimiter, or encoding issues. This guide helps you identify and f
                              Explanation="Row 2 has fewer columns than the header." />
 
                 <CodeExample Title="2) Malformed quotes"
-                             Code="id,comment
-1,&quot;hello world
-2,&quot;this is fine&quot;"
+                             Code="@("id,comment\n1,\"hello world\n2,\"this is fine\"")"
                              Explanation="Row 1 opens a quote but never closes it." />
 
                 <CodeExample Title="3) Wrong delimiter"

@@ -44,9 +44,8 @@ second line
                              Explanation="A newline inside a value can split a single record into multiple rows unless the field is properly quoted." />
 
                 <CodeExample Title="4) Smart quotes / copy-paste punctuation"
-                             Code="id,comment
-1,“hello world” 2,”ok”"
-                             Explanation="Copy/paste into Excel can introduce smart quotes. Many parsers only treat the plain quote character (&quot;) as valid quoting." />
+                             Code=@("id,comment\n1,\u201Chello world\u201D 2,\u201Cok\u201D")
+                             Explanation=@("Copy/paste into Excel can introduce smart quotes. Many parsers only treat the plain quote character (\") as valid quoting.") />
 
                 <CodeExample Title="5) Encoding mismatch (mojibake)"
                              Code="id,name

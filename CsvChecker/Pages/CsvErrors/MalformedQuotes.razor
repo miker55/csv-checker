@@ -28,28 +28,19 @@ can’t parse. Once quoting is off, column counts often appear wrong in subseque
 
             <div class="mt-6 space-y-8">
                 <CodeExample Title="1) Unclosed quote"
-                             Code="id,comment
-1,&quot;hello world
-2,&quot;this is fine&quot;"
+                             Code="@("id,comment\n1,\"hello world\n2,\"this is fine\"")"
                              Explanation="Row 1 opens a quote but never closes it, so the parser may treat the rest of the file as part of that field." />
 
                 <CodeExample Title="2) Quote inside a quoted value (needs escaping)"
-                             Code="id,comment
-1,&quot;She said &quot;hello&quot; to me&quot;
-2,&quot;ok&quot;"
-                             Explanation="If you need a quote character inside a quoted field, it usually must be escaped by doubling it (e.g., &quot;&quot;hello&quot;&quot;)." />
+                             Code="@("id,comment\n1,\"She said \"hello\" to me\"\n2,\"ok\"")"
+                             Explanation=@("If you need a quote character inside a quoted field, it usually must be escaped by doubling it (e.g., \"\"hello\"\").") />
 
                 <CodeExample Title="3) Line break inside a field (not properly quoted)"
-                             Code="id,notes
-1,first line
-second line
-2,ok"
+                             Code="@("id,notes\n1,first line\nsecond line\n2,ok")"
                              Explanation="A raw newline splits the record into multiple rows. If you need line breaks inside a field, the field must be properly quoted." />
 
                 <CodeExample Title="4) Smart quotes (non-standard quote characters)"
-                             Code="id,comment
-1,“hello world”
-2,“ok”"
+                             Code=@("id,comment\n1,\u201Chello world\u201D\n2,\u201Cok\u201D")
                              Explanation="Some exports replace normal quotes with “smart quotes”, which many importers don’t treat as valid CSV quoting." />
             </div>
         </Section>

@@ -1,12 +1,12 @@
-@page "/csv-errors/shopify-csv-import-errors"
+ï»¿@page "/csv-errors/shopify-csv-import-errors"
 
-<PageTitle>Shopify CSV import errors – Causes & Fixes | CSV Checker</PageTitle>
+<PageTitle>Shopify CSV import errors â€“ Causes & Fixes | CSV Checker</PageTitle>
 <meta name="description" content="Fix Shopify CSV import errors for products and customers. Learn common causes (missing required columns, bad handles, quotes, encoding) and diagnose your file in seconds." />
 
 <PageContainer MaxWidth="default">
     <!-- Header -->
     <CsvErrorsHeader Title="Shopify CSV import errors"
-                     Body="If your Shopify CSV upload fails, it’s usually caused by a formatting issue (columns, quoting, delimiter, encoding)
+                     Body="If your Shopify CSV upload fails, it's usually caused by a formatting issue (columns, quoting, delimiter, encoding)
 or a Shopify-specific field rule (like handles, required headers, or variant rows). This guide covers the most common
 causes and how to find every affected row quickly." />
 
@@ -34,9 +34,7 @@ my-hat,My Hat,Classic fit"
                              Explanation="Row 1 contains an extra comma in the Body field, so Shopify (and many importers) read the row as having too many columns." />
 
                 <CodeExample Title="2) Malformed quotes"
-                             Code="Handle,Title,Body (HTML)
-my-shirt,My Shirt,&quot;Great for summer
-my-hat,My Hat,&quot;Classic fit&quot;"
+                             Code="@("Handle,Title,Body (HTML)\nmy-shirt,My Shirt,\"Great for summer\nmy-hat,My Hat,\"Classic fit\"")"
                              Explanation="Row 1 opens a quote but never closes it, which can cause Shopify to mis-parse the rest of the file." />
 
                 <CodeExample Title="3) Duplicate or blank handles"
@@ -47,9 +45,7 @@ my-shirt,Another Shirt"
                              Explanation="Handles should be present and unique per product. Blank or duplicate handles often cause Shopify import failures or unexpected overwrites." />
 
                 <CodeExample Title="4) Encoding / smart quotes"
-                             Code="Handle,Title
-my-shirt,“My Shirt”
-my-hat,“My Hat”"
+                             Code=@("Handle,Title\nmy-shirt,\u201CMy Shirt\u201D\nmy-hat,\u201CMy Hat\u201D")
                              Explanation="Smart quotes can appear from copy/paste. Some systems treat these as invalid characters or misread them depending on encoding." />
             </div>
         </Section>
@@ -58,7 +54,7 @@ my-hat,“My Hat”"
             <H2>How to diagnose Shopify CSV issues quickly</H2>
             <P AdditionalClasses="mt-4">
                 Shopify errors can be misleading because one bad row can cause failures downstream. CSV Checker scans the entire file
-                and reports <strong>all</strong> structural and encoding problems at once—so you can fix everything before re-uploading.
+                and reports <strong>all</strong> structural and encoding problems at onceï¿½so you can fix everything before re-uploading.
             </P>
 
             <CsvErrorsFooterButtons />

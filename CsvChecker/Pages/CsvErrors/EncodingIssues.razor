@@ -38,10 +38,8 @@ Common problems include mismatched UTF-8 and Latin-1 encodings, BOM markers, sma
                              Explanation="A BOM can get interpreted as visible characters, which can break header matching (e.g., the first column becomes ï»¿id instead of id)." />
 
                 <CodeExample Title="3) Smart quotes (non-standard punctuation)"
-                             Code="id,comment
-1,“hello world”
-2,”ok”"
-                             Explanation="Some tools export or paste smart quotes. Many parsers only treat the plain quote character (&quot;) as valid quoting." />
+                             Code=@("id,comment\n1,\u201Chello world\u201D\n2,\u201Cok\u201D")
+                             Explanation=@("Some tools export or paste smart quotes. Many parsers only treat the plain quote character (\") as valid quoting.") />
 
                 <CodeExample Title="4) Hidden characters in values"
                              Code="id,city

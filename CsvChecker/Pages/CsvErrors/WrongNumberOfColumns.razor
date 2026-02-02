@@ -40,9 +40,7 @@ Common problems include extra/missing delimiters, malformed quotes, line breaks 
                              Explanation="Row 2 has fewer fields than the header, which makes the importer report a column mismatch." />
 
                 <CodeExample Title="3) Malformed quotes can shift column counts"
-                             Code="id,comment
-1,&quot;hello, world
-2,&quot;this is fine&quot;"
+                             Code="@("id,comment\n1,\"hello, world\n2,\"this is fine\"")"
                              Explanation="Row 1 opens a quote but never closes it, so subsequent rows may be parsed with the wrong number of columns." />
 
                 <CodeExample Title="4) Wrong delimiter (comma vs semicolon)"
