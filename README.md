@@ -61,5 +61,4 @@ The app is intentionally boring in a good way: no queues, no workers, no exotic 
 ### Prerequisites
 
 - .NET SDK (matching the target framework in the project)
-- A local SMTP server or email disabled (see below)
 
