@@ -127,18 +127,18 @@
 </section>
 
 @code {
-private bool _busy;
-private string? _error;
-private CancellationTokenSource? _cts;
+    private bool _busy;
+    private string? _error;
+    private CancellationTokenSource? _cts;
 
-// Tailwind-ish CTA button classes from your Hero.tsx
-private string UploadButtonClass =>
-    "relative group cursor-pointer flex items-center justify-center gap-3 px-8 py-4 rounded-xl " +
-    "bg-teal-600 text-white font-semibold text-lg shadow-lg shadow-teal-600/20 " +
-    "hover:bg-teal-700 transition-all active:scale-95 " +
-    (_busy ? "opacity-50 cursor-not-allowed pointer-events-none" : "");
+    // Tailwind-ish CTA button classes from your Hero.tsx
+    private string UploadButtonClass =>
+        "relative group cursor-pointer flex items-center justify-center gap-3 px-8 py-4 rounded-xl " +
+        "bg-teal-600 text-white font-semibold text-lg shadow-lg shadow-teal-600/20 " +
+        "hover:bg-teal-700 transition-all active:scale-95 " +
+        (_busy ? "opacity-50 cursor-not-allowed pointer-events-none" : "");
 
-public void Dispose()
+    public void Dispose()
     {
         _cts?.Cancel();
         _cts?.Dispose();
@@ -188,6 +188,29 @@ public void Dispose()
                     , message: $"The file size attempted was {file.Size / 1024.0 / 1024.0:F2}MB."
                     , ct: ct
                 );
+
+                try
+                {
+                    await JS.InvokeVoidAsync(
+                        "gtag",
+                        "event",
+                        "file_size_exceeded",
+                        new
+                        {
+                            file_size_bytes = file.Size
+                        }
+                    );
+                }
+                catch (Exception ex)
+                {
+                    // Silently ignore GA failures (ad blockers, script not loaded, etc.)
+                    await Telemetry.TryTrackAsync(
+                        eventType: TelemetryEventType.GAFailure
+                        , message: ex.Message
+                        , ct: ct
+                    );
+                }
+
                 return;
             }
 
@@ -199,7 +222,12 @@ public void Dispose()
                     "csv_uploaded",
                     new
                     {
-                        file_size = file.Size
+                        file_size_bytes = file.Size,
+                        file_size_bucket =
+                            file.Size < 500_000 ? "lt_500kb" :
+                            file.Size < 1_000_000 ? "500kb_1mb" :
+                            file.Size < 5_000_000 ? "1mb_5mb" :
+                            "gt_5mb"
                     }
                 );
             }
@@ -222,13 +250,13 @@ public void Dispose()
             }
 
             result = await Analyzer.AnalyzeAsync(file.Name, bytes, ct);
-            
+
             if (result is null)
             {
                 Nav.NavigateTo("/error");
                 return;
             }
-            
+
             Store.Put(result);
 
             await Telemetry.TryTrackAsync(
@@ -257,7 +285,7 @@ public void Dispose()
             {
                 // ignore GA errors here
             }
-        
+
             Nav.NavigateTo($"/report/{result.Token}");
         }
         catch (Exception ex)
